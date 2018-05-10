@@ -1,8 +1,10 @@
 #' Conditional Imputation for Logistic Scalar-on-Function Regression
 #'
 #'Given the imputation parameters, this function imputes the scores using
-#'their distribution conditional on the observed values of the curves.
-#'Muliple or mean imputation can be chosen.
+#'their distribution conditional on the observed values of the curves and the
+#'response variable. In the case of logistic regression, this essentially means
+#'that imputation is performed separately within each group of the response
+#'variable. Muliple or mean imputation can be chosen.
 #'
 #'@param dat An \eqn{n \times 4} data frame (where \eqn{N} is the number of subjects,
 #'       each with \eqn{m_i} observations, so that \eqn{\sum_{i=1}^N m_i = n})
@@ -14,7 +16,7 @@
 #'@param impute_type A string used to choose between mean and multiple imputation. Should be one of "Mean"
 #'       or "Multiple".
 #'@param mu0 A numeric vector of length \code{M} specifying the mean function for the 0 group, evaluated at \code{workGrid}.
-#'@param mu1 A numeric vector of length \code{M} specifyint the mean function for the 1 group, evaluated at \code{workGrid}.
+#'@param mu1 A numeric vector of length \code{M} specifying the mean function for the 1 group, evaluated at \code{workGrid}.
 #'@param var_delt A number representing \eqn{\sigma^2_\delta}, the variance of the noise.
 #'@param Cx An \eqn{M \times M} matrix for the covariance function of \eqn{X}, evaluated at \code{workGrid}.
 #'@param phi An \eqn{M \times J} matrix whose columns are the \eqn{J} eigenfunctions of \eqn{C_X}, each evaluate at \code{workGrid}.
