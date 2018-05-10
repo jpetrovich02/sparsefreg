@@ -1,5 +1,30 @@
-param_est_logistic <- function(dat,workGrid,cond.y=TRUE,p,face.args=list(knots = 12, pve = 0.95),
-                               k = 15,nPhi = NULL,fcr.args = list(use_bam = T,niter = 1)){
+#'Imputation Parameter Estimation for Logistic Regression
+#'
+#'Given the data, this function estimates the imputation parameters.
+#'This function is a wrapper for \code{fcr} if \code{cond.y} is set to TRUE,
+#'and \code{face.sparse} if \code{cond.y} is set to FALSE.
+#'
+#'@param dat A data frame with \eqn{n} rows (where \eqn{N} is the number of subjects,
+#'       each with \eqn{m_i} observations, so that \eqn{\sum_{i=1}^N m_i = n})
+#'       expected to have either 3 or 4. If \code{cond.y} is TRUE, should include
+#'       4 columns, with variables 'X','y','subj', and 'argvals'. If \code{cond.y}
+#'       is FALSE, only 3 columns are needed (no 'y' variable is used).
+#'@param workGrid A length \eqn{M} vector of the unique desired grid points on which to evaluate the function.
+#'@param cond.y A logical indicator to determine whether imputation will be done conditional on \eqn{Y}.
+#'@param p The (estimated) value of \eqn{p}, the probability of success associated with the response, \eqn{Y}.
+#'@param fcr.args A list of arguments to be passed to the underlying function \code{fcr}.
+#'@param k Dimension of the smooth terms used in \code{fcr}. Only needs to be specified if \code{cond.y} is TRUE.
+#'@param nPhi An integer value, indicating the number of random effects to include in the model. This is
+#'passed to \code{fcr} and is only used when \code{cond.y} is TRUE. See \code{fcr} for more details.
+#'@param face.args A list of arguments to be passed to the underlying function \code{face.sparse}.
+#'@details
+#'@return
+#'@author
+#'@references
+#'@example
+
+param_est_logistic <- function(dat,workGrid,cond.y=TRUE,p,fcr.args = list(use_bam = T,niter = 1),
+                               k = 15,nPhi = NULL,face.args=list(knots = 12, pve = 0.95)){
   N <- length(unique(dat[,"subj"]))
   fit <- NULL
   if(cond.y){
