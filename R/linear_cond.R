@@ -23,9 +23,10 @@
 #'@param lam A length-\eqn{J} numeric vector containing the eigenvalues of \eqn{C_X}.
 #'@param tol A (small) numerical value that sets the tolerance for trimming the eigenvalues of the conditional covariance.
 #'@details The variables of \code{dat} should be specified as follows: 'X' specifies the observed values of the curves
-#'(no missing values here); 'y' should be a vector of 1's and 0's such that the values of 'y' are the same for each subject;
-#''subj' should contain unique numeric identifiers for each subject, and 'argvals' should indicate the time point at which
-#'each observation was made (note that these values should be a subset of \code{workGrid}).
+#'(no missing values here); 'y' should be a vector of numeric values such that the \eqn{m_i} values of 'y'
+#'are the same for each subject; 'subj' should contain unique numeric identifiers for each subject,
+#'and 'argvals' should indicate the time point at which each observation was made
+#'(note that these values should be a subset of \code{workGrid}).
 #'@return Either a \eqn{N\times J} matrix of imputed scores if \code{impute_type} is set to "Mean", or a 3-dimensional array
 #'of dimension \eqn{N\times J\times k} if \code{impute_type} is set to "Multiple".
 #'@author Jusitn Petrovich, \email{jpetrovich02@@gmail.com}
