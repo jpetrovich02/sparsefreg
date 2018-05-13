@@ -1,7 +1,7 @@
 #' MISFIT (Multiple Imputation for Sparsely-sampled Functions at Irregular Times)
 #'
 #'Performs MISFIT for either linear (\code{family="Gaussian"}) or logistic
-#'(\code{family="Binomial}) regression.
+#'(\code{family="Binomial"}) regression.
 #'
 #'@param dat
 #'@param grid
