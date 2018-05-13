@@ -1,6 +1,20 @@
 #' MISFIT (Multiple Imputation for Sparsely-sampled Functions at Irregular Times)
 #'
+#'Performs MISFIT for either linear (\code{family="Gaussian"}) or logistic
+#'(\code{family="Binomial}) regression.
 #'
+#'@param dat
+#'@param grid
+#'@param K
+#'@param J
+#'@param family
+#'@param seed
+#'@param ret_allxi
+#'@details
+#'@return
+#'@author
+#'@references
+#'@example
 
 misfit <- function(dat,grid,K,J,family="Gaussian",seed,ret_allxi = F){
   M <- length(grid)
