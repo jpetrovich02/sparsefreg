@@ -11,7 +11,6 @@
 #'       is FALSE, only 3 columns are needed (no 'y' variable is used).
 #'@param workGrid A length \eqn{M} vector of the unique desired grid points on which to evaluate the function.
 #'@param cond.y A logical indicator to determine whether imputation will be done conditional on \eqn{Y}.
-#'@param p The (estimated) value of \eqn{p}, the probability of success associated with the response, \eqn{Y}.
 #'@param fcr.args A list of arguments to be passed to the underlying function \code{fcr}.
 #'@param k Dimension of the smooth terms used in \code{fcr}. Only needs to be specified if \code{cond.y} is TRUE.
 #'@param nPhi An integer value, indicating the number of random effects to include in the model. This is
@@ -24,17 +23,23 @@
 #'@example
 
 
-param_est_linear <- function(dat,J,workGrid,cond.y=TRUE,face.args=list(knots = 12, lower = -3, pve = 0.95)){
+param_est_linear <- function(dat,workGrid,cond.y=TRUE,fcr.args = list(use_bam = T,niter = 1),
+                             k=15,nPhi = NULL,face.args=list(knots = 12, pve = 0.95)){
   N <- length(unique(dat[,"subj"]))
   fit <- NULL
   if(cond.y){
-    ## Parameters for distribution of Xi_i|Y_i,{x_ij}:
-    k <- face.args[["knots"]]+3
-    nPhi <- min(c(floor((nrow(dat) - 2*k)/N),J))
-    # nPhi <- floor((nrow(dat) - 2*k)/N)
-    fit <- fcr(formula = X ~ s(argvals,k = k,bs = "ps") + s(argvals,by = y,k = k,bs = "ps"),
-               subj = "subj",argvals = "argvals",data = dat,use_bam = T,nPhi = nPhi,
-               face.args = face.args,argvals.new = workGrid)
+    # k <- face.args[["knots"]]+3
+    # nPhi <- min(c(floor((nrow(dat) - 2*k)/N),J))
+    ks <- deparse(substitute(k))
+    if(!is.null(nPhi)){fcr.args['nPhi'] <- deparse(nPhi)}
+    rhs <- paste("s(argvals, k =", ks,", bs = \"ps\") + s(argvals, by = y, k =", ks,", bs = \"ps\")")
+    model <- reformulate(response = "X",termlabels = rhs)
+    # fit <- fcr(formula = X ~ s(argvals,k = k,bs = "ps") + s(argvals,by = y,k = k,bs = "ps"),
+    #            subj = "subj",argvals = "argvals",data = dat,use_bam = T,nPhi = nPhi,
+    #            face.args = face.args,argvals.new = workGrid)
+    fit <- do.call("fcr",c(list(formula = model, data = dat, subj = "subj", argvals = "argvals",
+                                face.args = face.args, argvals.new = workGrid),
+                           fcr.args))
     muy <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(mean(y)))[[1]]
     var_y <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(var(y)))[[1]]
     Cb <- fit$face.object$Chat.new
@@ -56,12 +61,13 @@ param_est_linear <- function(dat,J,workGrid,cond.y=TRUE,face.args=list(knots = 1
     phi <- Cxeig$vectors*sqrt(length(workGrid))
     params <- list(mux = mux,Cx = Cx,lam = lam,phi = phi,var_delt = var_delt,
                    muy = muy,var_y = var_y,Cxy = Cxy)
+    pve = fit$face.object$pve
   }else{
     ## Parameters for distribution of Xi_i|{x_ij}:
     facedf <- dat[,c("X","argvals","subj")]
     colnames(facedf) <- c("y","argvals","subj")
     start_time <- proc.time()
-    fit <- face.sparse(facedf,argvals.new = workGrid,knots = 12,calculate.scores = T,pve = 0.95)
+    fit <- do.call("face.sparse",c(list(data = facedf,argvals.new = workGrid),face.args))
     run_time <- proc.time() - start_time
     mux <- fit$mu.new
     Cx <- fit$Chat.new
@@ -71,6 +77,7 @@ param_est_linear <- function(dat,J,workGrid,cond.y=TRUE,face.args=list(knots = 1
     var_delt <- fit$var.error.new[1]
     fit$runtime <- run_time
     params <- list(mux = mux,Cx = Cx,lam = lam,phi = phi,var_delt = var_delt)
+    pve = fit$pve
   }
-  return(list(params = params,runtime = fit$runtime))
+  return(list(params = params,runtime = fit$runtime,pve = pve))
 }

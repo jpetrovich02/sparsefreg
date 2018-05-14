@@ -16,13 +16,13 @@
 #'@references
 #'@example
 
-misfit <- function(dat,grid,K,J,family="Gaussian",seed,ret_allxi = F){
+misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F){
   M <- length(grid)
   N <- length(unique(dat$subj))
 
   if(family=="Gaussian"){
     # Estimate imputation parameters
-    ipars <- param_est_linear(obsdf,J,grid,T)
+    ipars <- param_est_linear(obsdf,grid,T)
     muy <- ipars$params$muy;  var_y <- ipars$params$var_y
     Cxy <- ipars$params$Cxy;  Cx <- ipars$params$Cx
     phi <- ipars$params$phi;  lam <- ipars$params$lam
@@ -48,19 +48,22 @@ misfit <- function(dat,grid,K,J,family="Gaussian",seed,ret_allxi = F){
     bhat <- matrix(NA,nrow = J,ncol = K)
     beta.hat.mat <- matrix(NA,nrow = M,ncol = K)
     beta.var <- array(NA,dim = c(M,M,K))
+    alpha <- numeric(K)
     for(i in 1:K){
       fit <- if(J==1){lm(y~xihat[,i])}else{lm(y~xihat[,,i])}
-      veps_muc <- sum((fit$residuals)^2)/(N-length(fit$coefficients))
+      veps <- sum((fit$residuals)^2)/(N-length(fit$coefficients))
       bhat[,i] <- coef(fit)[-1]
       if(J==1){
         beta.hat.mat[,i] <- phi[,1]*bhat[,i]
-        beta.var[,,i] <- phi[,1]%*%t(phi[,1])*veps_muc/c(t(xihat[,,i])%*%xihat[,,i])
+        beta.var[,,i] <- phi[,1]%*%t(phi[,1])*veps/c(t(xihat[,,i])%*%xihat[,,i])
       }else{
         beta.hat.mat[,i] <- phi[,1:J]%*%bhat[,i]
-        beta.var[,,i] <- phi[,1:J]%*%solve(t(xihat[,,i])%*%xihat[,,i])%*%t(phi[,1:J])*veps_muc
+        beta.var[,,i] <- phi[,1:J]%*%solve(t(xihat[,,i])%*%xihat[,,i])%*%t(phi[,1:J])*veps
+        alpha[i] <- coef(fit)[1] - sum((phi[,1:J]*mux)%*%bhat[,i])/M
       }
     }
     beta.hat <- rowMeans(beta.hat.mat)
+    alpha.hat <- mean(alpha)
     W <- apply(beta.var,c(1,2),mean)
     B <- (beta.hat.mat - beta.hat)%*%t(beta.hat.mat - beta.hat)/(K-1)
     Cbeta <- W + ((K+1)/K)*B
@@ -77,8 +80,11 @@ misfit <- function(dat,grid,K,J,family="Gaussian",seed,ret_allxi = F){
     }
 
   }else if(family=="Binomial"){
+    sumy <- dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(vy = var(y),my = mean(y))
+    var_y <- sumy[['vy']]
+
     # Estimate imputation parameters
-    ipars <- param_est_logistic(obsdf,J,grid,cond.y = T)
+    ipars <- param_est_logistic(obsdf,grid,cond.y = T,p = sumy[['my']])
     mu0 <- ipars$params$mu0;  mu1 <- ipars$params$mu1
     var_delt <- ipars$params$var_delt;  Cx <- ipars$params$Cb
     phi <- ipars$params$phi;  lam <- ipars$params$lam
@@ -112,13 +118,6 @@ misfit <- function(dat,grid,K,J,family="Gaussian",seed,ret_allxi = F){
     # }else{
     # Xitilde <- aperm(apply(Xitilde,c(1,3),function(x) x + meanj),c(2,1,3))
     # }
-
-    var_y <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(vy = var(y)))$vy
-    # phat <- (dat %>%
-    #            group_by(subj) %>%
-    #            summarise(y = first(y)) %>%
-    #            summarise(n1 = sum(y==1)))$n1/N
-    # var_y <- phat*(1-phat)
 
     # Estimate Beta
     bhat <- matrix(NA,J,K)

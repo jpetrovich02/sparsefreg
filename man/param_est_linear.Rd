@@ -4,8 +4,9 @@
 \alias{param_est_linear}
 \title{Imputation Parameter Estimation for Linear Regression}
 \usage{
-param_est_linear(dat, J, workGrid, cond.y = TRUE, face.args = list(knots =
-  12, lower = -3, pve = 0.95))
+param_est_linear(dat, workGrid, cond.y = TRUE, fcr.args = list(use_bam = T,
+  niter = 1), k = 15, nPhi = NULL, face.args = list(knots = 12, pve =
+  0.95))
 }
 \arguments{
 \item{dat}{A data frame with \eqn{n} rows (where \eqn{N} is the number of subjects,
@@ -18,16 +19,14 @@ is FALSE, only 3 columns are needed (no 'y' variable is used).}
 
 \item{cond.y}{A logical indicator to determine whether imputation will be done conditional on \eqn{Y}.}
 
-\item{face.args}{A list of arguments to be passed to the underlying function \code{face.sparse}.}
-
-\item{p}{The (estimated) value of \eqn{p}, the probability of success associated with the response, \eqn{Y}.}
-
 \item{fcr.args}{A list of arguments to be passed to the underlying function \code{fcr}.}
 
 \item{k}{Dimension of the smooth terms used in \code{fcr}. Only needs to be specified if \code{cond.y} is TRUE.}
 
 \item{nPhi}{An integer value, indicating the number of random effects to include in the model. This is
 passed to \code{fcr} and is only used when \code{cond.y} is TRUE. See \code{fcr} for more details.}
+
+\item{face.args}{A list of arguments to be passed to the underlying function \code{face.sparse}.}
 }
 \description{
 Given the data, this function estimates the imputation parameters.
