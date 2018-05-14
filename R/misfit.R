@@ -93,12 +93,12 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F,user_par
     }
 
   }else if(family=="Binomial"){
-    sumy <- dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(vy = var(y),my = mean(y))
-    var_y <- sumy[['vy']]
+    sum_y <- dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(vy = var(y),my = mean(y))
+    var_y <- sum_y[['vy']]
 
     # Estimate imputation parameters
     if(is.null(user_params)){
-      ipars <- param_est_logistic(obsdf,grid,cond.y = T,p = sumy[['my']],
+      ipars <- param_est_logistic(obsdf,grid,cond.y = T,p = sum_y[['my']],
                                   fcr.args = fcr.args,k = k,nPhi = nPhi)
       mu0 <- ipars$params$mu0;  mu1 <- ipars$params$mu1
       var_delt <- ipars$params$var_delt;  Cx <- ipars$params$Cb
@@ -113,7 +113,12 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F,user_par
     ## Multitple Imputation, Conditional on outcome
     xi_all <- cond_imp(dat,workGrid = grid,k = K,seed = seed,impute_type = "Multiple",
                        mu0 = mu0,mu1 = mu1,var_delt = var_delt,Cx = Cx,phi = phi,lam = lam)
-    xihat <- xi_all[,1:J,]
+    paste("hello")
+    if(J==1){
+      xihat <- xi_all[,1:J]
+    }else{
+      xihat <- xi_all[,1:J,]
+    }
 
     # Estimate X's from imputed Xi
     Xall <- array(NA,c(N,M,K))
