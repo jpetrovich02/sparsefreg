@@ -4,7 +4,9 @@
 \alias{misfit}
 \title{MISFIT (Multiple Imputation for Sparsely-sampled Functions at Irregular Times)}
 \usage{
-misfit(dat, grid, K = 10, J, family = "Gaussian", seed, ret_allxi = F)
+misfit(dat, grid, K = 10, J, family = "Gaussian", seed, ret_allxi = F,
+  user_params = NULL, fcr.args = list(use_bam = T, niter = 1), k = 15,
+  nPhi = NULL)
 }
 \description{
 Performs MISFIT for either linear (\code{family="Gaussian"}) or logistic

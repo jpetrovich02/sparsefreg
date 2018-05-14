@@ -10,23 +10,36 @@
 #'@param family
 #'@param seed
 #'@param ret_allxi
+#'@param user_params
+#'@param fcr.args
+#'@param k
+#'@param nPhi
 #'@details
 #'@return
 #'@author
 #'@references
 #'@example
 
-misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F){
+misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F,user_params = NULL,
+                   fcr.args = list(use_bam = T,niter = 1),k=15,nPhi = NULL){
   M <- length(grid)
   N <- length(unique(dat$subj))
 
   if(family=="Gaussian"){
     # Estimate imputation parameters
-    ipars <- param_est_linear(obsdf,grid,T)
-    muy <- ipars$params$muy;  var_y <- ipars$params$var_y
-    Cxy <- ipars$params$Cxy;  Cx <- ipars$params$Cx
-    phi <- ipars$params$phi;  lam <- ipars$params$lam
-    mux <- ipars$params$mux;  var_delt <- ipars$params$var_delt
+    if(is.null(user_params)){
+      ipars <- param_est_linear(obsdf,grid,T,fcr.args = fcr.args,k = k,nPhi = nPhi)
+      muy <- ipars$params$muy;  var_y <- ipars$params$var_y
+      Cxy <- ipars$params$Cxy;  Cx <- ipars$params$Cx
+      phi <- ipars$params$phi;  lam <- ipars$params$lam
+      mux <- ipars$params$mux;  var_delt <- ipars$params$var_delt
+    }else{
+      ipars = list(params = user_params)
+      muy <- user_params$muy;  var_y <- user_params$var_y
+      Cxy <- user_params$Cxy;  Cx <- user_params$Cx
+      phi <- user_params$phi;  lam <- user_params$lam
+      mux <- user_params$mux;  var_delt <- user_params$var_delt
+    }
 
     ## Multitple Imputation, Conditional on outcome
     xi_all <- cond_imp_lm(dat,workGrid = grid,k = K,impute_type = "Multiple",
@@ -84,10 +97,18 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F){
     var_y <- sumy[['vy']]
 
     # Estimate imputation parameters
-    ipars <- param_est_logistic(obsdf,grid,cond.y = T,p = sumy[['my']])
-    mu0 <- ipars$params$mu0;  mu1 <- ipars$params$mu1
-    var_delt <- ipars$params$var_delt;  Cx <- ipars$params$Cb
-    phi <- ipars$params$phi;  lam <- ipars$params$lam
+    if(is.null(user_params)){
+      ipars <- param_est_logistic(obsdf,grid,cond.y = T,p = sumy[['my']],
+                                  fcr.args = fcr.args,k = k,nPhi = nPhi)
+      mu0 <- ipars$params$mu0;  mu1 <- ipars$params$mu1
+      var_delt <- ipars$params$var_delt;  Cx <- ipars$params$Cb
+      phi <- ipars$params$phi;  lam <- ipars$params$lam
+    }else{
+      ipars = list(params = user_params)
+      mu0 <- user_params$mu0;  mu1 <- user_params$mu1
+      var_delt <- user_params$var_delt;  Cx <- user_params$Cb
+      phi <- user_params$phi;  lam <- user_params$lam
+    }
 
     ## Multitple Imputation, Conditional on outcome
     xi_all <- cond_imp(dat,workGrid = grid,k = K,seed = seed,impute_type = "Multiple",
