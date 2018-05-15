@@ -48,11 +48,15 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F,user_par
     xihat <- xi_all[,1:J,]
 
     # Estimate X's from imputed Xi
-    Xall <- array(NA,c(N,M,K))
-    for(i in 1:K){
-      Xall[,,i] <- xihat[,,i]%*%t(phi[,1:J])
-      for(j in 1:N){
-        Xall[j,,i] <- Xall[j,,i] + mux
+    Xall <- array(0,c(N,M,K))
+    Xall <- sweep(Xall,MARGIN = c(1,2),FUN = "+",STATS = matrix(mux,N,M,byrow = T))
+    if(J==1){
+      for(i in 1:K){  ################# probably a better way to do this loop; could possibly do without the loop?
+        Xall <- sweep(Xall,1:2,STATS = xihat[,i]%*%t(phi[,1])/K,FUN = "+")
+      }
+    }else{
+      for(i in 1:K){
+        Xall[,,i] <- Xall[,,i] + xihat[,,i]%*%t(phi[,1:J])
       }
     }
     Xhat <- apply(Xall,c(1,2),mean)
@@ -68,7 +72,8 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F,user_par
       bhat[,i] <- coef(fit)[-1]
       if(J==1){
         beta.hat.mat[,i] <- phi[,1]*bhat[,i]
-        beta.var[,,i] <- phi[,1]%*%t(phi[,1])*veps/c(t(xihat[,,i])%*%xihat[,,i])
+        beta.var[,,i] <- phi[,1]%*%t(phi[,1])*veps/c(t(xihat[,i])%*%xihat[,i])
+        alpha[i] <- coef(fit)[1] - mean(phi[,1]*mux)*bhat[i]
       }else{
         beta.hat.mat[,i] <- phi[,1:J]%*%bhat[,i]
         beta.var[,,i] <- phi[,1:J]%*%solve(t(xihat[,,i])%*%xihat[,,i])%*%t(phi[,1:J])*veps
@@ -113,7 +118,6 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F,user_par
     ## Multitple Imputation, Conditional on outcome
     xi_all <- cond_imp(dat,workGrid = grid,k = K,seed = seed,impute_type = "Multiple",
                        mu0 = mu0,mu1 = mu1,var_delt = var_delt,Cx = Cx,phi = phi,lam = lam)
-    paste("hello")
     if(J==1){
       xihat <- xi_all[,1:J]
     }else{
