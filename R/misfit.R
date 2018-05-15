@@ -22,14 +22,16 @@
 #'@export
 
 misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F,user_params = NULL,
-                   fcr.args = list(use_bam = T,niter = 1),k=15,nPhi = NULL){
+                   fcr.args = list(use_bam = T,niter = 1),k=15,nPhi = NULL,
+                   face.args=list(knots = 12, pve = 0.95)){
   M <- length(grid)
   N <- length(unique(dat$subj))
 
   if(family=="Gaussian"){
     # Estimate imputation parameters
     if(is.null(user_params)){
-      ipars <- param_est_linear(obsdf,grid,T,fcr.args = fcr.args,k = k,nPhi = nPhi)
+      ipars <- param_est_linear(obsdf,grid,T,fcr.args = fcr.args,
+                                k = k,nPhi = nPhi,face.args = face.args)
       muy <- ipars$params$muy;  var_y <- ipars$params$var_y
       Cxy <- ipars$params$Cxy;  Cx <- ipars$params$Cx
       phi <- ipars$params$phi;  lam <- ipars$params$lam
