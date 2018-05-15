@@ -31,6 +31,7 @@
 #'@author Jusitn Petrovich, \email{jpetrovich02@@gmail.com}
 #'@references
 #'@example
+#'@export
 
 logistic_cond <- function(dat,workGrid,k=10,seed=NULL,impute_type="Multiple",
                           mu0=NULL,mu1=NULL,var_delt=NULL,Cx=NULL,

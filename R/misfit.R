@@ -19,6 +19,7 @@
 #'@author
 #'@references
 #'@example
+#'@export
 
 misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F,user_params = NULL,
                    fcr.args = list(use_bam = T,niter = 1),k=15,nPhi = NULL){

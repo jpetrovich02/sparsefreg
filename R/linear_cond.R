@@ -32,6 +32,7 @@
 #'@author Jusitn Petrovich, \email{jpetrovich02@@gmail.com}
 #'@references
 #'@example
+#'@export
 
 cond_imp_lm <- function(dat,workGrid,k=5,seed=NULL,impute_type="Multiple",
                         muy=NULL,var_y=NULL,Cxy,var_delt=NULL,mux=NULL,Cx=NULL,

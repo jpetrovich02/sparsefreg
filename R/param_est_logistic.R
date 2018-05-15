@@ -22,6 +22,7 @@
 #'@author
 #'@references
 #'@example
+#'@export
 
 param_est_logistic <- function(dat,workGrid,cond.y=TRUE,p,fcr.args = list(use_bam = T,niter = 1),
                                k = 15,nPhi = NULL,face.args=list(knots = 12, pve = 0.95)){

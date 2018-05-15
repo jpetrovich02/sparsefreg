@@ -21,6 +21,7 @@
 #'@author
 #'@references
 #'@example
+#'@export
 
 
 param_est_linear <- function(dat,workGrid,cond.y=TRUE,fcr.args = list(use_bam = T,niter = 1),

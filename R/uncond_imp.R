@@ -28,6 +28,7 @@
 #'@author Jusitn Petrovich, \email{jpetrovich02@@gmail.com}
 #'@references
 #'@example
+#'@export
 
 uncond_imp <- function(dat,workGrid,k=10,seed=NULL,impute_type="Multiple",
                        var_delt=NULL,mux=NULL,Cx=NULL,phi=NULL,lam=NULL,
