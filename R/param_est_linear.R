@@ -27,29 +27,30 @@
 param_est_linear <- function(dat,workGrid,cond.y=TRUE,fcr.args = list(use_bam = T,niter = 1),
                              k=15,nPhi = NULL,face.args=list(knots = 12, pve = 0.95)){
   N <- length(unique(dat[,"subj"]))
-  fit <- NULL
+  # fit <- NULL
   if(cond.y){
-    # k <- face.args[["knots"]]+3
     # nPhi <- min(c(floor((nrow(dat) - 2*k)/N),J))
     ks <- deparse(substitute(k))
     if(!is.null(nPhi)){fcr.args['nPhi'] <- deparse(nPhi)}
-    rhs <- paste("s(argvals, k =", ks,", bs = \"ps\") + s(argvals, by = y, k =", ks,", bs = \"ps\")")
-    model <- reformulate(response = "X",termlabels = rhs)
-    # fit <- fcr(formula = X ~ s(argvals,k = k,bs = "ps") + s(argvals,by = y,k = k,bs = "ps"),
-    #            subj = "subj",argvals = "argvals",data = dat,use_bam = T,nPhi = nPhi,
-    #            face.args = face.args,argvals.new = workGrid)
-    fit <- do.call("fcr",c(list(formula = model, data = dat, subj = "subj", argvals = "argvals",
-                                face.args = face.args, argvals.new = workGrid),
-                           fcr.args))
+    rhs <- paste("~ ", "s(argvals, k =", ks,", bs = \"ps\") + s(argvals, by = y, k =", ks,", bs = \"ps\")")
+    # model <- reformulate(response = "X",termlabels = rhs)
+    model <- update.formula(rhs, "X ~ .")
+    # model <- update(~ s(argavls, k = k, bs = "ps") + s(argvals, by = y, k = k, bs = "ps"),X ~ .)
+    fit <- do.call("fcr",c(list(formula = model, data = substitute(dat), subj = "subj",
+                              argvals = "argvals", face.args = face.args,
+                              argvals.new = workGrid),
+                   fcr.args))
     muy <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(mean(y)))[[1]]
     var_y <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(var(y)))[[1]]
     Cb <- fit$face.object$Chat.new
+    ci <- match(workGrid,fit$face.object$argvals.new)
+    Cb <- Cb[ci,ci]
     var_delt <- fit$face.object$var.error.hat[1]
     # pd <- plot.gam.invisible(fit)
     # f1 <- pd[[1]]$fit + fit$fit$coefficients[1]
     # f2 <- pd[[2]]$fit
     # alternatively:
-    predcoefs <- predict(fit,newdata = data.frame("argvals" = grid,"y" = 1,"subj"=1),type='iterms',se.fit=TRUE)
+    predcoefs <- predict(fit,newdata = data.frame("argvals" = workGrid,"y" = 1,"subj"=1),type='iterms',se.fit=TRUE)
     predcoefs <- predcoefs$insample_predictions
     predcoefs$fit[,1] <- predcoefs$fit[,1] + attributes(predcoefs)$constant ## add back in \hat{\beta_0}
     f1 <- predcoefs$fit[,1]
