@@ -7,6 +7,7 @@ Depends: R (>= 3.4.3)
 Imports: 
   CompQuadForm,
   dplyr, 
+  face,
   fcr,
   MASS
 Suggests:
