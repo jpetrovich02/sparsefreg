@@ -33,12 +33,12 @@ param_est_linear <- function(dat,workGrid,cond.y=TRUE,fcr.args = list(use_bam = 
     # nPhi <- min(c(floor((nrow(dat) - 2*k)/N),J))
     ks <- deparse(substitute(k))
     if(!is.null(nPhi)){fcr.args['nPhi'] <- nPhi}
-    rhs <- paste("~ ", "s(argvals, k =", ks,", bs = \"ps\") + s(argvals, by = y, k =", ks,", bs = \"ps\")")
-    # rhs <- paste("s(argvals, k =", ks,", bs = \"ps\") + s(argvals, by = y, k =", ks,", bs = \"ps\")")
-    # model <- reformulate(response = "X",termlabels = rhs)
-    model <- update.formula(rhs, "X ~ .")
+    # rhs <- paste("~ ", "s(argvals, k =", ks,", bs = \"ps\") + s(argvals, by = y, k =", ks,", bs = \"ps\")")
+    rhs <- paste("s(argvals, k =", ks,", bs = \"ps\") + s(argvals, by = y, k =", ks,", bs = \"ps\")")
+    model <- reformulate(response = "X",termlabels = rhs)
+    # model <- update.formula(rhs, "X ~ .")
     # model <- update(~ s(argavls, k = k, bs = "ps") + s(argvals, by = y, k = k, bs = "ps"),X ~ .)
-    fit <- do.call("fcr",c(list(formula = model, data = substitute(dat), subj = "subj",
+    fit <- do.call("fcr",c(list(formula = model, data = dat, subj = "subj",
                               argvals = "argvals", face.args = face.args,
                               argvals.new = workGrid),
                    fcr.args))
