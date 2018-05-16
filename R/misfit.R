@@ -21,8 +21,8 @@
 #'@example
 #'@export
 
-misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F,user_params = NULL,
-                   fcr.args = list(use_bam = T,niter = 1),k=15,nPhi = NULL,
+misfit <- function(dat,grid,K=10,J,family="Gaussian",seed=NULL,ret_allxi = F,user_params = NULL,
+                   fcr.args = list(use_bam = T,niter = 1),k = 15, nPhi = NULL,
                    face.args=list(knots = 12, pve = 0.95)){
   M <- length(grid)
   N <- length(unique(dat$subj))
@@ -30,8 +30,7 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F,user_par
   if(family=="Gaussian"){
     # Estimate imputation parameters
     if(is.null(user_params)){
-      ipars <- param_est_linear(obsdf,grid,T,fcr.args = fcr.args,
-                                k = k,nPhi = nPhi,face.args = face.args)
+      ipars <- param_est_linear(obsdf,grid,T,fcr.args = fcr.args,k = k,nPhi = nPhi,face.args = face.args)
       muy <- ipars$params$muy;  var_y <- ipars$params$var_y
       Cxy <- ipars$params$Cxy;  Cx <- ipars$params$Cx
       phi <- ipars$params$phi;  lam <- ipars$params$lam
@@ -89,12 +88,13 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F,user_par
     B <- (beta.hat.mat - beta.hat)%*%t(beta.hat.mat - beta.hat)/(K-1)
     Cbeta <- W + ((K+1)/K)*B
     ebeta <- eigen(Cbeta)$values
+    beta_phi <- eigen(Cbeta)$vectors
 
     # p-value
     Tb <- sum(beta.hat^2)
     # sum(ebeta[ebeta>0]*qchisq(0.95,1,lower.tail = T))
-    pv <- imhof(Tb,ebeta[ebeta>0])[[1]]
-    pv <- ifelse(pv<0,0,pv)
+    pvnorm <- imhof(Tb,ebeta[ebeta>0])[[1]]
+    pvnorm <- ifelse(pvnorm <0 ,0,pvnorm)
 
     if(!ret_allxi){
       xi_all <- apply(xi_all,c(1,2),mean)
@@ -106,8 +106,7 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F,user_par
 
     # Estimate imputation parameters
     if(is.null(user_params)){
-      ipars <- param_est_logistic(obsdf,grid,cond.y = T,p = sum_y[['my']],
-                                  fcr.args = fcr.args,k = k,nPhi = nPhi)
+      ipars <- param_est_logistic(obsdf,grid,cond.y = T,p = sum_y[['my']],fcr.args = fcr.args)
       mu0 <- ipars$params$mu0;  mu1 <- ipars$params$mu1
       var_delt <- ipars$params$var_delt;  Cx <- ipars$params$Cb
       phi <- ipars$params$phi;  lam <- ipars$params$lam
@@ -196,7 +195,7 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed,ret_allxi = F,user_par
     }
   }
 
-  out <- list(params = ipars[['params']], xiest = xi_all, Xest = Xhat, pv = pv,
+  out <- list(params = ipars[['params']], xiest = xi_all, Xest = Xhat, pvnorm = pvnorm,
               beta.hat = beta.hat, alpha.hat = alpha.hat, Cbeta = Cbeta, W = W, B = B)
   return(out)
 }

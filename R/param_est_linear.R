@@ -24,21 +24,20 @@
 #'@export
 
 
-param_est_linear <- function(dat,workGrid,cond.y=TRUE,fcr.args = list(use_bam = T,niter = 1),
-                             k=15,nPhi = NULL,face.args=list(knots = 12, pve = 0.95)){
+param_est_linear <- function(dat,workGrid,cond.y=TRUE,fcr.args = list(use_bam = T,niter = 1),k = 15,nPhi = NULL,
+                             face.args=list(knots = 12, pve = 0.95)){
   N <- length(unique(dat[,"subj"]))
-  # fit <- NULL
   if(cond.y){
-    # nPhi <- min(c(floor((nrow(dat) - 2*k)/N),J))
-    ks <- deparse(substitute(k))
-    if(!is.null(nPhi)){fcr.args['nPhi'] <- deparse(nPhi)}
-    rhs <- paste("~ ", "s(argvals, k =", ks,", bs = \"ps\") + s(argvals, by = y, k =", ks,", bs = \"ps\")")
+    # ks <- deparse(substitute(k))
+    # if(!is.null(nPhi)){fcr.args['nPhi'] <- nPhi}
+    # rhs <- paste("s(argvals, k =", ks,", bs = \"ps\") + s(argvals, by = y, k =", ks,", bs = \"ps\")")
     # model <- reformulate(response = "X",termlabels = rhs)
+    rhs <- paste("~ ", "s(argvals, k =", k,", bs = \"ps\") + s(argvals, by = y, k =", k,", bs = \"ps\")")
     model <- update.formula(rhs, "X ~ .")
-    # model <- update(~ s(argavls, k = k, bs = "ps") + s(argvals, by = y, k = k, bs = "ps"),X ~ .)
-    fit <- do.call("fcr",c(list(formula = model, data = substitute(dat), subj = "subj",
+    # cat("model looks like: ", paste(model))
+    fit <- do.call("fcr",c(list(formula = model, data = dat, subj = "subj",
                               argvals = "argvals", face.args = face.args,
-                              argvals.new = workGrid),
+                              argvals.new = workGrid,nPhi = nPhi),
                    fcr.args))
     muy <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(mean(y)))[[1]]
     var_y <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(var(y)))[[1]]
