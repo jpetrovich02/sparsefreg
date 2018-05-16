@@ -95,8 +95,6 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed=NULL,ret_allxi = F,use
     # sum(ebeta[ebeta>0]*qchisq(0.95,1,lower.tail = T))
     pvnorm <- imhof(Tb,ebeta[ebeta>0])[[1]]
     pvnorm <- ifelse(pvnorm <0 ,0,pvnorm)
-    Tnorm <- sum((t(beta.hat)%*%beta_phi[,1:J]/M)^2/ebeta[1:J])
-    pvnorm2 <- pchisq(Tnorm,J,lower.tail = F)
 
     if(!ret_allxi){
       xi_all <- apply(xi_all,c(1,2),mean)
@@ -197,7 +195,7 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed=NULL,ret_allxi = F,use
     }
   }
 
-  out <- list(params = ipars[['params']], xiest = xi_all, Xest = Xhat, pvnorm = pvnorm, pvnorm2 = pvnorm2,
+  out <- list(params = ipars[['params']], xiest = xi_all, Xest = Xhat, pvnorm = pvnorm,
               beta.hat = beta.hat, alpha.hat = alpha.hat, Cbeta = Cbeta, W = W, B = B)
   return(out)
 }
