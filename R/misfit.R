@@ -31,8 +31,6 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed=NULL,ret_allxi = F,use
     # Estimate imputation parameters
     if(is.null(user_params)){
       ipars <- param_est_linear(obsdf,grid,T,fcr.args = fcr.args,k = k,nPhi = nPhi,face.args = face.args)
-      # ipars <- do.call("param_est_linear",list(dat = obsdf, workGrid = grid, cond.y = T, fcr.args = fcr.args,
-      #                                          k = substitute(k), nPhi = substitute(nPhi), face.args = face.args))
       muy <- ipars$params$muy;  var_y <- ipars$params$var_y
       Cxy <- ipars$params$Cxy;  Cx <- ipars$params$Cx
       phi <- ipars$params$phi;  lam <- ipars$params$lam
