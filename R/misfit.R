@@ -18,7 +18,61 @@
 #'@return
 #'@author
 #'@references
-#'@example
+#'@examples
+#'
+#'###################################################################
+#'#------- Example Using MISFIT for a Linear SoF Model -------------#
+#'###################################################################
+#'
+#'set.seed(123)
+#'
+#'## Data generation
+#'M <- 100 # grid size
+#'N <- 400 # sample size
+#'m <- 2 # observations per subject
+#'J <- 5 # number of FPCs to use
+#'K <- 10 # number of imputations
+#'var_eps <- 1 # variance of model error
+#'var_delt <- 0.5 # variance of measurement error
+#'grid <- seq(from=0,to=1,length.out = M)
+#'mux <- rep(0,M)
+#'Cx_f<-function(t,s,sig2=1,rho=0.5){ # Matern covariance function with nu = 5/2
+#'  d <- abs(outer(t,s,"-"))
+#'  tmp2 <- sig2*(1+sqrt(5)*d/rho + 5*d^2/(3*rho^2))*exp(-sqrt(5)*d/rho)}
+#'Cx <- Cx_f(grid,grid)
+#'lam <- eigen(Cx,symmetric = T)$values/M
+#'phi <- eigen(Cx,symmetric = T)$vectors*sqrt(M)
+#'
+#'beta <- 10*(sin(2*pi*grid)+1)
+#'alpha <- 0
+#'
+#'X_s <- mvrnorm(N,mux,Cx)
+#'X_comp <- X_s + rnorm(N*M,sd = sqrt(var_delt))
+#'Xi <- (X_s-mux)%*%phi/M
+#'eps <- rnorm(N,0,sd = sqrt(var_eps))
+#'y <- c(alpha + X_s%*%beta/M + eps)
+#'
+#'X_mat<-matrix(nrow=N,ncol=m)
+#'T_mat<-matrix(nrow=N,ncol=m)
+#'ind_obs<-matrix(nrow=N,ncol=m)
+#'
+#'for(i in 1:N){
+#'  ind_obs[i,]<-sort(sample(1:M,m,replace=FALSE))
+#'  X_mat[i,]<-X_comp[i,ind_obs[i,]]
+#'  T_mat[i,]<-grid[ind_obs[i,]]
+#'}
+#'
+#'spt<-1
+#'ind_obs[spt,1] = 1; ind_obs[spt,m] = M
+#'X_mat[spt,]<-X_comp[spt,ind_obs[spt,]]
+#'T_mat[spt,]<-grid[ind_obs[spt,]]
+#'
+#'## Create data frame for observed data
+#'obsdf <- data.frame("X" = c(t(X_mat)),"argvals" = c(t(T_mat)),
+#'                    "y" = rep(y,each = m),"subj" = rep(1:N,each = m))
+#'
+#'misfit_out <- misfit(obsdf,grid = grid,K = K,J = J,family = "Gaussian",user_params = NULL,k = 12)
+#'
 #'@export
 
 misfit <- function(dat,grid,K=10,J,family="Gaussian",seed=NULL,ret_allxi = F,user_params = NULL,
