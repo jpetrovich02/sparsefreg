@@ -10,7 +10,8 @@ Imports:
   face,
   fcr,
   MASS
-Suggests:
+Suggests: knitr, rmarkdown
+VignetteBuilder: knitr
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
