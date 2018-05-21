@@ -3,22 +3,73 @@
 #'Performs MISFIT for either linear (\code{family="Gaussian"}) or logistic
 #'(\code{family="Binomial"}) regression.
 #'
-#'@param dat
-#'@param grid
-#'@param K
-#'@param J
-#'@param family
-#'@param seed
-#'@param ret_allxi
-#'@param user_params
-#'@param fcr.args
-#'@param k
+#'@param dat A data frame with \eqn{n} rows (where \eqn{N} is the number of subjects,
+#'  each with \eqn{m_i} observations, so that \eqn{\sum_{i=1}^N m_i = n})
+#'  expected to have either 3 or 4. If \code{cond.y} is TRUE, should include
+#'  4 columns, with variables 'X','y','subj', and 'argvals'. If \code{cond.y}
+#'  is FALSE, only 3 columns are needed (no 'y' variable is used).
+#'@param grid A length \eqn{M} vector of the unique desired grid points on which to evaluate the function.
+#'@param K An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".
+#'@param J An integer specifying the number of FPCs to include in the regression model.
+#'@param family A string indicating the family of the response variable. Currently only "Gaussian"
+#'  (linear regression) and "Binomial" (logistic regression) are supported.
+#'@param seed An integer used to specify the seed. Optional, but useful for making results reproducible in the
+#'  Multiple Imputation step.
+#'@param ret_allxi logical-valued.. Indicates whether or not to return all \code{K}
+#'  imputed sets of scores. If FALSE (default), returns the average scores across the \code{K} imputations.
+#'@param user_params An optional list of user-defined imputation parameters. Currently, the user must provide
+#'  either all necessary imputation parameters, or none. See 'Details'.
+#'@param fcr.args A list of arguments which can be passed to \code{fcr} (for the estimation of imputaion
+#'  parameters). Default is to use \code{use_bam} = T and \code{niter} = 1. The list must not contain the
+#'  formula, which is constructed within \code{misfit}. See \code{fcr} for more details.
+#'@param k Dimension of the smooth terms used in \code{fcr}. Default is 15.
 #'@param nPhi
+#'@param face.args A list of arguments to be passed to the underlying function \code{face.sparse}.
+#'  Currently defaults to setting \code{knots} = 12 and \code{pve} = 0.95. See \code{face.sparse} for
+#'  more details.
 #'@details
+#'  When using the \code{user_params} argument, the user must supply a list containing the
+#'  following elements.
+#'
+#'  \bold{Linear Regression}:
+#'  \itemize{
+#'   \item 'Cx': An \eqn{M\times M} matrix representing the covariance function of \eqn{X(t)},
+#'     evaluated on \code{grid}. Should not be missing any values.
+#'   \item 'mux': A length \eqn{M} numeric vector representing the mean function of \eqn{X(t)},
+#'     evaluated on \code{grid}. Should not be missing any values.
+#'   \item 'var_delt': A single numeric value representing the variance of \eqn{\delta}, the
+#'     measurement error associated with \eqn{X(t)}.
+#'   \item 'muy': A single numeric value representing the mean of \eqn{Y}.
+#'   \item 'lam': A numeric vector of length \emph{at least} \code{J}, representing the eigenvalues
+#'     of \eqn{C_X(t,s)}, the covariance function of \eqn{X(t)}.
+#'   \item 'phi': A matrix with \eqn{M} rows and \emph{at least} \code{J} columns, representing the
+#'     eigenfunctions of \eqn{C_X(t,s)} (one per column) evaluated on \code{grid}. Should not be missing
+#'     any values.
+#'   \item 'Cxy': A numeric vector of length \eqn{M}, representing the cross-covariance \eqn{C_{XY}(t)}
+#'     evaluated on \code{grid}. Should not be missing any values.
+#'   \item 'var_y': A single numeric value representing the varinace of \eqn{Y}.
+#'  }
+#'  \bold{Logistic Regression}:
+#'  \itemize{
+#'   \item 'Cx': An \eqn{M\times M} matrix representing the covariance function of \eqn{X(t)},
+#'     evaluated on \code{grid}. Should not be missing any values.
+#'   \item 'mu0': A length \eqn{M} numeric vector representing the mean function of \eqn{X(t)|Y = 1},
+#'     evaluated on \code{grid}. Should not be missing any values.
+#'   \item 'mu1': A length \eqn{M} numeric vector representing the mean function of \eqn{X(t)|Y = 0},
+#'     evaluated on \code{grid}. Should not be missing any values.
+#'   \item 'var_delt': A single numeric value representing the variance of \eqn{\delta}, the
+#'     measurement error associated with \eqn{X(t)}.
+#'   \item 'lam': A numeric vector of length \emph{at least} \code{J}, representing the eigenvalues
+#'     of \eqn{C_X(t,s)}, the covariance function of \eqn{X(t)}.
+#'   \item 'phi': A matrix with \eqn{M} rows and \emph{at least} \code{J} columns, representing the
+#'     eigenfunctions of \eqn{C_X(t,s)} (one per column) evaluated on \code{grid}. Should not be missing
+#'     any values.
+#'  }
 #'@return
-#'@author
 #'@references
 #'@examples
+#'
+#'\dontrun{
 #'
 #'###################################################################
 #'#------- Example Using MISFIT for a Linear SoF Model -------------#
@@ -72,6 +123,8 @@
 #'                    "y" = rep(y,each = m),"subj" = rep(1:N,each = m))
 #'
 #'misfit_out <- misfit(obsdf,grid = grid,K = K,J = J,family = "Gaussian",user_params = NULL,k = 12)
+#'
+#'}
 #'
 #'@export
 

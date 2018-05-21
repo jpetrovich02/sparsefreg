@@ -8,7 +8,141 @@ misfit(dat, grid, K = 10, J, family = "Gaussian", seed = NULL,
   ret_allxi = F, user_params = NULL, fcr.args = list(use_bam = T, niter =
   1), k = 15, nPhi = NULL, face.args = list(knots = 12, pve = 0.95))
 }
+\arguments{
+\item{dat}{A data frame with \eqn{n} rows (where \eqn{N} is the number of subjects,
+each with \eqn{m_i} observations, so that \eqn{\sum_{i=1}^N m_i = n})
+expected to have either 3 or 4. If \code{cond.y} is TRUE, should include
+4 columns, with variables 'X','y','subj', and 'argvals'. If \code{cond.y}
+is FALSE, only 3 columns are needed (no 'y' variable is used).}
+
+\item{grid}{A length \eqn{M} vector of the unique desired grid points on which to evaluate the function.}
+
+\item{K}{An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".}
+
+\item{J}{An integer specifying the number of FPCs to include in the regression model.}
+
+\item{family}{A string indicating the family of the response variable. Currently only "Gaussian"
+(linear regression) and "Binomial" (logistic regression) are supported.}
+
+\item{seed}{An integer used to specify the seed. Optional, but useful for making results reproducible in the
+Multiple Imputation step.}
+
+\item{ret_allxi}{logical-valued.. Indicates whether or not to return all \code{K}
+imputed sets of scores. If FALSE (default), returns the average scores across the \code{K} imputations.}
+
+\item{user_params}{An optional list of user-defined imputation parameters. Currently, the user must provide
+either all necessary imputation parameters, or none. See 'Details'.}
+
+\item{fcr.args}{A list of arguments which can be passed to \code{fcr} (for the estimation of imputaion
+parameters). Default is to use \code{use_bam} = T and \code{niter} = 1. The list must not contain the
+formula, which is constructed within \code{misfit}. See \code{fcr} for more details.}
+
+\item{k}{Dimension of the smooth terms used in \code{fcr}. Default is 15.}
+
+\item{face.args}{A list of arguments to be passed to the underlying function \code{face.sparse}.
+Currently defaults to setting \code{knots} = 12 and \code{pve} = 0.95. See \code{face.sparse} for
+more details.}
+}
 \description{
 Performs MISFIT for either linear (\code{family="Gaussian"}) or logistic
 (\code{family="Binomial"}) regression.
+}
+\details{
+When using the \code{user_params} argument, the user must supply a list containing the
+ following elements.
+
+ \bold{Linear Regression}:
+ \itemize{
+  \item 'Cx': An \eqn{M\times M} matrix representing the covariance function of \eqn{X(t)},
+    evaluated on \code{grid}. Should not be missing any values.
+  \item 'mux': A length \eqn{M} numeric vector representing the mean function of \eqn{X(t)},
+    evaluated on \code{grid}. Should not be missing any values.
+  \item 'var_delt': A single numeric value representing the variance of \eqn{\delta}, the
+    measurement error associated with \eqn{X(t)}.
+  \item 'muy': A single numeric value representing the mean of \eqn{Y}.
+  \item 'lam': A numeric vector of length \emph{at least} \code{J}, representing the eigenvalues
+    of \eqn{C_X(t,s)}, the covariance function of \eqn{X(t)}.
+  \item 'phi': A matrix with \eqn{M} rows and \emph{at least} \code{J} columns, representing the
+    eigenfunctions of \eqn{C_X(t,s)} (one per column) evaluated on \code{grid}. Should not be missing
+    any values.
+  \item 'Cxy': A numeric vector of length \eqn{M}, representing the cross-covariance \eqn{C_{XY}(t)}
+    evaluated on \code{grid}. Should not be missing any values.
+  \item 'var_y': A single numeric value representing the varinace of \eqn{Y}.
+ }
+ \bold{Logistic Regression}:
+ \itemize{
+  \item 'Cx': An \eqn{M\times M} matrix representing the covariance function of \eqn{X(t)},
+    evaluated on \code{grid}. Should not be missing any values.
+  \item 'mu0': A length \eqn{M} numeric vector representing the mean function of \eqn{X(t)|Y = 1},
+    evaluated on \code{grid}. Should not be missing any values.
+  \item 'mu1': A length \eqn{M} numeric vector representing the mean function of \eqn{X(t)|Y = 0},
+    evaluated on \code{grid}. Should not be missing any values.
+  \item 'var_delt': A single numeric value representing the variance of \eqn{\delta}, the
+    measurement error associated with \eqn{X(t)}.
+  \item 'lam': A numeric vector of length \emph{at least} \code{J}, representing the eigenvalues
+    of \eqn{C_X(t,s)}, the covariance function of \eqn{X(t)}.
+  \item 'phi': A matrix with \eqn{M} rows and \emph{at least} \code{J} columns, representing the
+    eigenfunctions of \eqn{C_X(t,s)} (one per column) evaluated on \code{grid}. Should not be missing
+    any values.
+ }
+}
+\examples{
+
+\dontrun{
+
+###################################################################
+#------- Example Using MISFIT for a Linear SoF Model -------------#
+###################################################################
+
+set.seed(123)
+
+## Data generation
+M <- 100 # grid size
+N <- 400 # sample size
+m <- 2 # observations per subject
+J <- 5 # number of FPCs to use
+K <- 10 # number of imputations
+var_eps <- 1 # variance of model error
+var_delt <- 0.5 # variance of measurement error
+grid <- seq(from=0,to=1,length.out = M)
+mux <- rep(0,M)
+Cx_f<-function(t,s,sig2=1,rho=0.5){ # Matern covariance function with nu = 5/2
+ d <- abs(outer(t,s,"-"))
+ tmp2 <- sig2*(1+sqrt(5)*d/rho + 5*d^2/(3*rho^2))*exp(-sqrt(5)*d/rho)}
+Cx <- Cx_f(grid,grid)
+lam <- eigen(Cx,symmetric = T)$values/M
+phi <- eigen(Cx,symmetric = T)$vectors*sqrt(M)
+
+beta <- 10*(sin(2*pi*grid)+1)
+alpha <- 0
+
+X_s <- mvrnorm(N,mux,Cx)
+X_comp <- X_s + rnorm(N*M,sd = sqrt(var_delt))
+Xi <- (X_s-mux)\%*\%phi/M
+eps <- rnorm(N,0,sd = sqrt(var_eps))
+y <- c(alpha + X_s\%*\%beta/M + eps)
+
+X_mat<-matrix(nrow=N,ncol=m)
+T_mat<-matrix(nrow=N,ncol=m)
+ind_obs<-matrix(nrow=N,ncol=m)
+
+for(i in 1:N){
+ ind_obs[i,]<-sort(sample(1:M,m,replace=FALSE))
+ X_mat[i,]<-X_comp[i,ind_obs[i,]]
+ T_mat[i,]<-grid[ind_obs[i,]]
+}
+
+spt<-1
+ind_obs[spt,1] = 1; ind_obs[spt,m] = M
+X_mat[spt,]<-X_comp[spt,ind_obs[spt,]]
+T_mat[spt,]<-grid[ind_obs[spt,]]
+
+## Create data frame for observed data
+obsdf <- data.frame("X" = c(t(X_mat)),"argvals" = c(t(T_mat)),
+                   "y" = rep(y,each = m),"subj" = rep(1:N,each = m))
+
+misfit_out <- misfit(obsdf,grid = grid,K = K,J = J,family = "Gaussian",user_params = NULL,k = 12)
+
+}
+
 }
