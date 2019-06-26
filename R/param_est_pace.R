@@ -4,7 +4,7 @@
 #'@example
 #'@export
 
-param_est_pace <- function(){
+param_est_pace <- function(dat,workGrid,cond.y){
 
 
 }
