@@ -24,58 +24,70 @@
 #'@export
 
 
-param_est_linear <- function(dat,workGrid,cond.y=TRUE,fcr.args = list(use_bam = T,niter = 1),
+param_est_linear <- function(dat,workGrid,cond.y=TRUE,use_fcr = TRUE,fcr.args = list(use_bam = T,niter = 1),
                              k = 15,nPhi = NULL,face.args=list(knots = 12, pve = 0.95)){
   N <- length(unique(dat[,"subj"]))
   if(cond.y){
+    muy <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(mean(y)))[[1]]
+    var_y <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(var(y)))[[1]]
+
+    if(use_fcr){
+      params <- param_est_fcr(dat,workGrid,cond.y,fcr.args,k,nPhi,face.args)
+    }else{
+      param_est_pace()
+    }
     # ks <- deparse(substitute(k))
     # if(!is.null(nPhi)){fcr.args['nPhi'] <- nPhi}
     # rhs <- paste("s(argvals, k =", ks,", bs = \"ps\") + s(argvals, by = y, k =", ks,", bs = \"ps\")")
     # model <- reformulate(response = "X",termlabels = rhs)
-    rhs <- paste("~ ", "s(argvals, k =", k,", bs = \"ps\") + s(argvals, by = y, k =", k,", bs = \"ps\")")
-    model <- update.formula(rhs, "X ~ .")
+    # rhs <- paste("~ ", "s(argvals, k =", k,", bs = \"ps\") + s(argvals, by = y, k =", k,", bs = \"ps\")")
+    # model <- update.formula(rhs, "X ~ .")
     # cat("model looks like: ", paste(model))
-    fit <- do.call("fcr",c(list(formula = model, data = dat, subj = "subj",
-                              argvals = "argvals", face.args = face.args,
-                              argvals.new = workGrid,nPhi = nPhi),
-                   fcr.args))
-    muy <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(mean(y)))[[1]]
-    var_y <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(var(y)))[[1]]
-    Cb <- fit$face.object$Chat.new
-    ci <- match(workGrid,fit$face.object$argvals.new)
-    Cb <- Cb[ci,ci]
-    var_delt <- fit$face.object$var.error.hat[1]
-
-    predcoefs <- predict(fit,newdata = data.frame("argvals" = workGrid,"y" = 1,"subj"=1),type='iterms',se.fit=TRUE)
-    predcoefs <- predcoefs$insample_predictions
-    predcoefs$fit[,1] <- predcoefs$fit[,1] + attributes(predcoefs)$constant ## add back in \hat{\beta_0}
-    f1 <- predcoefs$fit[,1]
-    f2 <- predcoefs$fit[,2]
-    mux <- f1 + muy*f2
-    Cx <- var_y*f2%*%t(f2) + Cb
-    Cxeig <- eigen(Cx)
-    Cxy <- var_y*f2
-    lam <- Cxeig$values/length(workGrid)
-    phi <- Cxeig$vectors*sqrt(length(workGrid))
-    params <- list(mux = mux,Cx = Cx,lam = lam,phi = phi,var_delt = var_delt,
-                   muy = muy,var_y = var_y,Cxy = Cxy)
-    pve = fit$face.object$pve
+    # fit <- do.call("fcr",c(list(formula = model, data = dat, subj = "subj",
+    #                           argvals = "argvals", face.args = face.args,
+    #                           argvals.new = workGrid,nPhi = nPhi),
+    #                fcr.args))
+    # Cb <- fit$face.object$Chat.new
+    # ci <- match(workGrid,fit$face.object$argvals.new)
+    # Cb <- Cb[ci,ci]
+    # var_delt <- fit$face.object$var.error.hat[1]
+    #
+    # predcoefs <- predict(fit,newdata = data.frame("argvals" = workGrid,"y" = 1,"subj"=1),type='iterms',se.fit=TRUE)
+    # predcoefs <- predcoefs$insample_predictions
+    # predcoefs$fit[,1] <- predcoefs$fit[,1] + attributes(predcoefs)$constant ## add back in \hat{\beta_0}
+    # f1 <- predcoefs$fit[,1]
+    # f2 <- predcoefs$fit[,2]
+    # mux <- f1 + muy*f2
+    # Cx <- var_y*f2%*%t(f2) + Cb
+    # Cxeig <- eigen(Cx)
+    # Cxy <- var_y*f2
+    # lam <- Cxeig$values/length(workGrid)
+    # phi <- Cxeig$vectors*sqrt(length(workGrid))
+    # params <- list(mux = mux,Cx = Cx,lam = lam,phi = phi,var_delt = var_delt,
+    #                muy = muy,var_y = var_y,Cxy = Cxy)
+    params[["muy"]] <- muy
+    params[["var_y"]] <- var_y
+    # pve = fit$face.object$pve
   }else{
     ## Parameters for distribution of Xi_i|{x_ij}:
-    facedf <- dat[,c("X","argvals","subj")]
-    colnames(facedf) <- c("y","argvals","subj")
-    start_time <- proc.time()
-    fit <- do.call("face.sparse",c(list(data = facedf,argvals.new = workGrid),face.args))
-    run_time <- proc.time() - start_time
-    mux <- fit$mu.new
-    Cx <- fit$Chat.new
-    Cxeig <- eigen(Cx)
-    lam <- Cxeig$values/length(workGrid)
-    phi <- Cxeig$vectors*sqrt(length(workGrid))
-    var_delt <- fit$var.error.new[1]
-    fit$runtime <- run_time
-    params <- list(mux = mux,Cx = Cx,lam = lam,phi = phi,var_delt = var_delt)
-    pve = fit$pve
+    if(use_fcr){
+      facedf <- dat[,c("X","argvals","subj")]
+      colnames(facedf) <- c("y","argvals","subj")
+      start_time <- proc.time()
+      fit <- do.call("face.sparse",c(list(data = facedf,argvals.new = workGrid),face.args))
+      run_time <- proc.time() - start_time
+      mux <- fit$mu.new
+      Cx <- fit$Chat.new
+      Cxeig <- eigen(Cx)
+      lam <- Cxeig$values/length(workGrid)
+      phi <- Cxeig$vectors*sqrt(length(workGrid))
+      var_delt <- fit$var.error.new[1]
+      fit$runtime <- run_time
+      params <- list(mux = mux,Cx = Cx,lam = lam,phi = phi,var_delt = var_delt)
+      # pve = fit$pve
+    }else{
+
+    }
   }
-  return(list(params = params,runtime = fit$runtime,pve = pve))
+  return(list(params = params,runtime = fit$runtime))
 }
