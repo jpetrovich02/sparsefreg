@@ -24,8 +24,8 @@
 #'@export
 
 
-param_est_linear <- function(dat,workGrid,cond.y=TRUE,fcr.args = list(use_bam = T,niter = 1),k = 15,nPhi = NULL,
-                             face.args=list(knots = 12, pve = 0.95)){
+param_est_linear <- function(dat,workGrid,cond.y=TRUE,fcr.args = list(use_bam = T,niter = 1),
+                             k = 15,nPhi = NULL,face.args=list(knots = 12, pve = 0.95)){
   N <- length(unique(dat[,"subj"]))
   if(cond.y){
     # ks <- deparse(substitute(k))
@@ -45,10 +45,7 @@ param_est_linear <- function(dat,workGrid,cond.y=TRUE,fcr.args = list(use_bam = 
     ci <- match(workGrid,fit$face.object$argvals.new)
     Cb <- Cb[ci,ci]
     var_delt <- fit$face.object$var.error.hat[1]
-    # pd <- plot.gam.invisible(fit)
-    # f1 <- pd[[1]]$fit + fit$fit$coefficients[1]
-    # f2 <- pd[[2]]$fit
-    # alternatively:
+
     predcoefs <- predict(fit,newdata = data.frame("argvals" = workGrid,"y" = 1,"subj"=1),type='iterms',se.fit=TRUE)
     predcoefs <- predcoefs$insample_predictions
     predcoefs$fit[,1] <- predcoefs$fit[,1] + attributes(predcoefs)$constant ## add back in \hat{\beta_0}
