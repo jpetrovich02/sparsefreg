@@ -4,7 +4,7 @@
 #'@example
 #'@export
 
-param_est_pace <- function(dat,M,cond.y,FPCA.args = NULL){
+param_est_pace <- function(dat,M,cond.y,muy_hat,FPCA.args = NULL){
   if(is.null(FPCA.args)){
     # M <- length(workGrid)
     FPCA.args <- list(dataType = "Sparse",error = TRUE,nRegGrid = M)
