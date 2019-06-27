@@ -28,6 +28,7 @@ param_est_linear <- function(dat,workGrid,cond.y=TRUE,use_fcr = TRUE,fcr.args = 
                              k = 15,nPhi = NULL,face.args=list(knots = 12, pve = 0.95),
                              FPCA.args = NULL){
   N <- length(unique(dat[,"subj"]))
+  start_time <- proc.time()
   if(cond.y){
     muy <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(mean(y)))[[1]]
     var_y <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(var(y)))[[1]]
@@ -74,21 +75,19 @@ param_est_linear <- function(dat,workGrid,cond.y=TRUE,use_fcr = TRUE,fcr.args = 
     if(use_fcr){
       facedf <- dat[,c("X","argvals","subj")]
       colnames(facedf) <- c("y","argvals","subj")
-      start_time <- proc.time()
       fit <- do.call("face.sparse",c(list(data = facedf,argvals.new = workGrid),face.args))
-      run_time <- proc.time() - start_time
       mux <- fit$mu.new
       Cx <- fit$Chat.new
       Cxeig <- eigen(Cx)
       lam <- Cxeig$values/length(workGrid)
       phi <- Cxeig$vectors*sqrt(length(workGrid))
       var_delt <- fit$var.error.new[1]
-      fit$runtime <- run_time
       params <- list(mux = mux,Cx = Cx,lam = lam,phi = phi,var_delt = var_delt)
       # pve = fit$pve
     }else{
       params <- param_est_pace(dat,workGrid,cond.y,FPCA.args)
     }
   }
-  return(list(params = params,runtime = fit$runtime))
+  run_time <- proc.time() - start_time
+  return(list(params = params,runtime = runtime))
 }
