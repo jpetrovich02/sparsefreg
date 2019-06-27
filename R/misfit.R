@@ -132,51 +132,118 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
                    cond.y = T,ret_allxi = F,user_params = NULL,use_fcr = TRUE,
                    fcr.args = list(use_bam = T,niter = 1),k = 15, nPhi = NULL,
                    face.args=list(knots = 12, pve = 0.95)){
+
+  # Check arguments
+  if(!is.null(user_params)){
+    # issue error if any necessary params are missing
+
+    # issue error if cond.y is TRUE and user_params is non-NULL valued but missing muy and var_y
+  }
+  if(!(impute_type %in% c("Multiple","Mean"))){
+    # issue error if impute_type is something other than "Multiple" or "Mean"
+  }
+  if(!(family %in% c("Gaussian","Binomial"))){
+    # issue error if family is something other than "Gaussian" or "Binomial"
+  }
+
   run.time <- list(est = NULL,imp = NULL)
   M <- length(grid)
   N <- length(unique(dat$subj))
 
   if(family=="Gaussian"){
-    if(cond.y){
-
-      # Estimate imputation parameters
-      if(is.null(user_params)){
-        par.est <- param_est_linear(dat,grid,cond.y,use_fcr,k = k,nPhi = nPhi,
+    # Estimate imputation parameters
+    if(is.null(user_params)){
+      par.est <- param_est_linear(dat,grid,M,cond.y,use_fcr,k = k,nPhi = nPhi,
                                   fcr.args = fcr.args,face.args = face.args)
-        ipars <- par.est[["params"]]
-        run.time[["est"]] <- par.est[["runtime"]]
-        # muy <- ipars[["muy"]];  var_y <- ipars[["var_y"]]
-        # Cxy <- ipars[["Cxy"]];  Cx <- ipars[["Cx"]]
-        # phi <- ipars[["phi"]];  lam <- ipars[["lam"]]
-        # mux <- ipars[["mux"]];  var_delt <- ipars[["var_delt"]]
-      }else{
-        ipars <- user_params
-        # muy <- user_params[["muy"]];  var_y <- user_params[["var_y"]]
-        # Cxy <- user_params[["Cxy"]];  Cx <- user_params[["Cx"]]
-        # phi <- user_params[["phi"]];  lam <- user_params[["lam"]]
-        # mux <- user_params[["mux"]];  var_delt <- user_params[["var_delt"]]
-      }
-
-      # Impute
-      if(impute_type=="Multiple"){
-        muc <- multiple_conditional(dat,params = ipars,grid,grid,J,nimps = nimps,seed = seed)
-        Xiest <- muc[["Xiest"]]
-        Xhat <- muc[["X"]]
-        betahat <- muc[["beta"]]
-        var.w <- muc[["v.w"]]
-        var.b <- muc[["v.b"]]
-        var.t <- muc[["v.t"]]
-        alpha.hat <- NULL
-        pvnorm <- NULL
-      }else{
-
-      }
+      ipars <- par.est[["params"]]
+      run.time[["est"]] <- par.est[["runtime"]]
     }else{
-      if(impute_type=="Multiple"){
+      ipars <- user_params
+    }
 
+    # Impute Scores
+    imp.start <- proc.time()
+    if(cond.y){
+      scores_all <- cond_imp_lm(dat,workGrid = workGrid,nimps = nimps,seed = seed,impute_type = impute_type,
+                            muy = ipars[["muy"]],var_y = ipars[["var_y"]],Cxy = ipars[["Cxy"]],
+                            var_delt = ipars[["var_delt"]],Cx = ipars[["Cx"]],mux = ipars[["mux"]],
+                            phi = ipars[["phi"]],lam = ipars[["lam"]])
+    }else if(!cond.y){
+      scores_all <- uncond_imp(dat,workGrid = workGrid,nimps = nimps,seed = seed,impute_type = impute_type,
+                           var_delt = ipars[["var_delt"]],Cx = ipars[["Cx"]],
+                           mux = ipars[["mux"]],phi = ipars[["phi"]],lam = ipars[["lam"]])
+    }
+    run.time[["imp"]] <- imp.start - proc.time()
+
+    # Obtain regression estimates using imputed scores
+    if(impute_type=="Multiple"){
+      scores_imp <- scores_all[,1:J,]
+      Xiest <- apply(scores_imp,MARGIN = c(1,2),mean)
+
+      # Estimate X's from imputed scores
+      Xhat <- if(J==1){
+        sweep(matrix(rep(ipars[["phi"]][,1],N),N,M,byrow = T)*c(Xiest),2,ipars[["mux"]],FUN = "+")
       }else{
-
+        t(c(ipars[["mux"]]) + ipars[["phi"]][,1:J]%*%t(Xiest))
       }
+
+      # Estimate Beta
+      b.hat.mat <- matrix(NA,nrow = J,ncol = nimps)
+      beta.hat.mat <- matrix(NA,nrow = M,ncol = nimps)
+      beta.var <- array(NA,dim = c(M,M,nimps))
+      alpha <- numeric(nimps)
+      veps <- numeric(nimps)
+      for(i in 1:nimps){
+        if(J==1){
+          fit <- lm(y~scores_imp[,i])
+          veps[i] <- sum((fit$residuals)^2)/(N-length(fit$coefficients))
+          b.hat.mat[,i] <- coef(fit)[-1]
+          beta.hat.mat[,i] <- ipars[["phi"]][,1]*b.hat.mat[,i]
+          alpha[i] <- coef(fit)[1] - mean(phi[,1]*mux)*b.hat.mat[i]
+          beta.var[,,i] <-
+            ipars[["phi"]][,1:J]%*%solve(t(scores_imp[,i])%*%scores_imp[,i])%*%t(ipars[["phi"]][,1:J])*veps[i]
+        }else{
+          fit <- lm(y~scores_imp[,,i])
+          veps[i] <- sum((fit$residuals)^2)/(N-length(fit$coefficients))
+          b.hat.mat[,i] <- coef(fit)[-1]
+          beta.hat.mat[,i] <- ipars[["phi"]][,1:J]%*%b.hat.mat[,i]
+          alpha[i] <- coef(fit)[1] - sum((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%b.hat.mat[,i])/M
+          beta.var[,,i] <-
+            ipars[["phi"]][,1:J]%*%solve(t(scores_imp[,,i])%*%scores_imp[,,i])%*%t(ipars[["phi"]][,1:J])*veps[i]
+        }
+      }
+      ipars[["var_eps"]] <- mean(veps)
+      beta.hat <- rowMeans(beta.hat.mat)
+      alpha.hat <- mean(alpha)
+
+      var.w <- apply(beta.var,c(1,2),mean)
+      var.b <- (beta.hat.mat - beta.hat)%*%t(beta.hat.mat - beta.hat)/(nimps-1)
+      var.t <- var.w + ((nimps+1)/nimps)*var.b
+      Cbeta <- list(var.w = var.w,var.b = var.b,var.t = var.t)
+
+      pvnorm <- NULL
+    }else if(impute_type=="Mean"){
+      Xiest <- scores_all[,1:J]
+
+      # Estimate X's from imputed scores
+      Xhat <- if(J==1){
+        sweep(matrix(rep(ipars[["phi"]][,1],N),N,M,byrow = T)*c(Xiest),2,ipars[["mux"]],FUN = "+")
+      }else{
+        t(c(ipars[["mux"]]) + ipars[["phi"]][,1:J]%*%t(Xiest))
+      }
+
+      # Beta estimate
+      fit <- lm(y~Xiest)
+      veps <- sum((fit$residuals)^2)/(N-length(fit$coefficients))
+      ipars[["var_eps"]] <- veps
+      b.hat <- coef(fit)[-1]
+      beta.hat <- if(J==1){
+        ipars[["phi"]][,1]*b.hat
+      }else{
+        ipars[["phi"]][,1:J]%*%b.hat
+      }
+      beta.var <- ipars[["phi"]][,1:J]%*%solve(t(Xiest)%*%Xiest)%*%t(ipars[["phi"]][,1:J])*veps
+      Cbeta = beta.var
     }
 
     # ## Multitple Imputation, Conditional on outcome
@@ -232,9 +299,9 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
     # pvnorm <- imhof(Tb,ebeta[ebeta>0])[[1]]
     # pvnorm <- ifelse(pvnorm <0 ,0,pvnorm)
 
-    if(!ret_allxi){
-      xi_all <- apply(xi_all,c(1,2),mean)
-    }
+    # if(!ret_allxi){
+    #   xi_all <- apply(xi_all,c(1,2),mean)
+    # }
 
   }else if(family=="Binomial"){
     sum_y <- dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(vy = var(y),my = mean(y))
@@ -343,8 +410,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
   }
 
   out <- list(params = ipars, Xiest = Xiest, Xhat = Xhat, pvnorm = pvnorm,
-              beta.hat = beta.hat, alpha.hat = alpha.hat,
-              var.w = W, var.b = B, Cbeta = v.t,
+              beta.hat = beta.hat, alpha.hat = alpha.hat,Cbeta = Cbeta,
               run.time = run.time)
   return(out)
 }
