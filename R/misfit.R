@@ -243,7 +243,9 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         ipars[["phi"]][,1:J]%*%b.hat
       }
       beta.var <- ipars[["phi"]][,1:J]%*%solve(t(Xiest)%*%Xiest)%*%t(ipars[["phi"]][,1:J])*veps
-      Cbeta = beta.var
+      Cbeta <- beta.var
+
+      pvnorm <- NULL
     }
 
     # ## Multitple Imputation, Conditional on outcome
