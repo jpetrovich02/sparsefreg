@@ -9,14 +9,14 @@
 #'  4 columns, with variables 'X','y','subj', and 'argvals'. If \code{cond.y}
 #'  is FALSE, only 3 columns are needed (no 'y' variable is used).
 #'@param grid A length \eqn{M} vector of the unique desired grid points on which to evaluate the function.
-#'@param K An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".
+#'@param nimps An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".
 #'@param J An integer specifying the number of FPCs to include in the regression model.
 #'@param family A string indicating the family of the response variable. Currently only "Gaussian"
 #'  (linear regression) and "Binomial" (logistic regression) are supported.
 #'@param seed An integer used to specify the seed. Optional, but useful for making results reproducible in the
 #'  Multiple Imputation step.
-#'@param ret_allxi logical-valued.. Indicates whether or not to return all \code{K}
-#'  imputed sets of scores. If FALSE (default), returns the average scores across the \code{K} imputations.
+#'@param ret_allxi logical-valued.. Indicates whether or not to return all \code{nimps}
+#'  imputed sets of scores. If FALSE (default), returns the average scores across the \code{nimps} imputations.
 #'@param user_params An optional list of user-defined imputation parameters. Currently, the user must provide
 #'  either all necessary imputation parameters, or none. See 'Details'.
 #'@param fcr.args A list of arguments which can be passed to \code{fcr} (for the estimation of imputaion
@@ -82,7 +82,7 @@
 #'N <- 400 # sample size
 #'m <- 2 # observations per subject
 #'J <- 5 # number of FPCs to use
-#'K <- 10 # number of imputations
+#'nimps <- 10 # number of imputations
 #'var_eps <- 1 # variance of model error
 #'var_delt <- 0.5 # variance of measurement error
 #'grid <- seq(from=0,to=1,length.out = M)
@@ -122,86 +122,115 @@
 #'obsdf <- data.frame("X" = c(t(X_mat)),"argvals" = c(t(T_mat)),
 #'                    "y" = rep(y,each = m),"subj" = rep(1:N,each = m))
 #'
-#'misfit_out <- misfit(obsdf,grid = grid,K = K,J = J,family = "Gaussian",user_params = NULL,k = 12)
+#'misfit_out <- misfit(obsdf,grid = grid,nimps = nimps,J = J,family = "Gaussian",user_params = NULL,k = 12)
 #'
 #'}
 #'
 #'@export
 
-misfit <- function(dat,grid,K=10,J,family="Gaussian",seed=NULL,ret_allxi = F,user_params = NULL,
+misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type = "Multiple",
+                   cond.y = T,ret_allxi = F,user_params = NULL,use_fcr = TRUE,
                    fcr.args = list(use_bam = T,niter = 1),k = 15, nPhi = NULL,
                    face.args=list(knots = 12, pve = 0.95)){
+  run.time <- list(est = NULL,imp = NULL)
   M <- length(grid)
   N <- length(unique(dat$subj))
 
   if(family=="Gaussian"){
-    # Estimate imputation parameters
-    if(is.null(user_params)){
-      ipars <- param_est_linear(obsdf,grid,T,fcr.args = fcr.args,k = k,nPhi = nPhi,face.args = face.args)
-      muy <- ipars$params$muy;  var_y <- ipars$params$var_y
-      Cxy <- ipars$params$Cxy;  Cx <- ipars$params$Cx
-      phi <- ipars$params$phi;  lam <- ipars$params$lam
-      mux <- ipars$params$mux;  var_delt <- ipars$params$var_delt
-    }else{
-      ipars = list(params = user_params)
-      muy <- user_params$muy;  var_y <- user_params$var_y
-      Cxy <- user_params$Cxy;  Cx <- user_params$Cx
-      phi <- user_params$phi;  lam <- user_params$lam
-      mux <- user_params$mux;  var_delt <- user_params$var_delt
-    }
+    if(cond.y){
 
-    ## Multitple Imputation, Conditional on outcome
-    xi_all <- cond_imp_lm(dat,workGrid = grid,k = K,impute_type = "Multiple",
-                          muy = muy,var_y = var_y,Cxy = Cxy,var_delt = var_delt,
-                          Cx = Cx,mux = mux,phi = phi,lam = lam,seed = seed)
-    xihat <- xi_all[,1:J,]
-
-    # Estimate X's from imputed Xi
-    Xall <- array(0,c(N,M,K))
-    Xall <- sweep(Xall,MARGIN = c(1,2),FUN = "+",STATS = matrix(mux,N,M,byrow = T))
-    if(J==1){
-      for(i in 1:K){  ################# probably a better way to do this loop; could possibly do without the loop?
-        Xall <- sweep(Xall,1:2,STATS = xihat[,i]%*%t(phi[,1])/K,FUN = "+")
-      }
-    }else{
-      for(i in 1:K){
-        Xall[,,i] <- Xall[,,i] + xihat[,,i]%*%t(phi[,1:J])
-      }
-    }
-    Xhat <- apply(Xall,c(1,2),mean)
-
-    # Estimate Beta
-    bhat <- matrix(NA,nrow = J,ncol = K)
-    beta.hat.mat <- matrix(NA,nrow = M,ncol = K)
-    beta.var <- array(NA,dim = c(M,M,K))
-    alpha <- numeric(K)
-    for(i in 1:K){
-      fit <- if(J==1){lm(y~xihat[,i])}else{lm(y~xihat[,,i])}
-      veps <- sum((fit$residuals)^2)/(N-length(fit$coefficients))
-      bhat[,i] <- coef(fit)[-1]
-      if(J==1){
-        beta.hat.mat[,i] <- phi[,1]*bhat[,i]
-        beta.var[,,i] <- phi[,1]%*%t(phi[,1])*veps/c(t(xihat[,i])%*%xihat[,i])
-        alpha[i] <- coef(fit)[1] - mean(phi[,1]*mux)*bhat[i]
+      # Estimate imputation parameters
+      if(is.null(user_params)){
+        par.est <- param_est_linear(dat,grid,cond.y,use_fcr,k = k,nPhi = nPhi,
+                                  fcr.args = fcr.args,face.args = face.args)
+        ipars <- par.est[["parameters"]]
+        run.time[["est"]] <- par.est[["runtime"]]
+        # muy <- ipars[["muy"]];  var_y <- ipars[["var_y"]]
+        # Cxy <- ipars[["Cxy"]];  Cx <- ipars[["Cx"]]
+        # phi <- ipars[["phi"]];  lam <- ipars[["lam"]]
+        # mux <- ipars[["mux"]];  var_delt <- ipars[["var_delt"]]
       }else{
-        beta.hat.mat[,i] <- phi[,1:J]%*%bhat[,i]
-        beta.var[,,i] <- phi[,1:J]%*%solve(t(xihat[,,i])%*%xihat[,,i])%*%t(phi[,1:J])*veps
-        alpha[i] <- coef(fit)[1] - sum((phi[,1:J]*mux)%*%bhat[,i])/M
+        ipars <- user_params
+        # muy <- user_params[["muy"]];  var_y <- user_params[["var_y"]]
+        # Cxy <- user_params[["Cxy"]];  Cx <- user_params[["Cx"]]
+        # phi <- user_params[["phi"]];  lam <- user_params[["lam"]]
+        # mux <- user_params[["mux"]];  var_delt <- user_params[["var_delt"]]
+      }
+
+      # Impute
+      if(impute_type=="Multiple"){
+        muc <- multiple_conditional(dat,params = ipars,grid,grid,J,nimps = nimps,seed = seed)
+        Xiest <- muc[["Xiest"]]
+        Xhat <- muc[["X"]]
+        betahat <- muc[["beta"]]
+        var.w <- muc[["v.w"]]
+        var.b <- muc[["v.b"]]
+        var.t <- muc[["v.t"]]
+        alpha.hat <- NULL
+        pvnorm <- NULL
+      }else{
+
+      }
+    }else{
+      if(impute_type=="Multiple"){
+
+      }else{
+
       }
     }
-    beta.hat <- rowMeans(beta.hat.mat)
-    alpha.hat <- mean(alpha)
-    W <- apply(beta.var,c(1,2),mean)
-    B <- (beta.hat.mat - beta.hat)%*%t(beta.hat.mat - beta.hat)/(K-1)
-    Cbeta <- W + ((K+1)/K)*B
-    ebeta <- eigen(Cbeta)$values
-    beta_phi <- eigen(Cbeta)$vectors
 
-    # p-value
-    Tb <- sum(beta.hat^2)
-    # sum(ebeta[ebeta>0]*qchisq(0.95,1,lower.tail = T))
-    pvnorm <- imhof(Tb,ebeta[ebeta>0])[[1]]
-    pvnorm <- ifelse(pvnorm <0 ,0,pvnorm)
+    # ## Multitple Imputation, Conditional on outcome
+    # xi_all <- cond_imp_lm(dat,workGrid = grid,k = nimps,impute_type = "Multiple",
+    #                       muy = muy,var_y = var_y,Cxy = Cxy,var_delt = var_delt,
+    #                       Cx = Cx,mux = mux,phi = phi,lam = lam,seed = seed)
+    # xihat <- xi_all[,1:J,]
+    #
+    # # Estimate X's from imputed Xi
+    # Xall <- array(0,c(N,M,nimps))
+    # Xall <- sweep(Xall,MARGIN = c(1,2),FUN = "+",STATS = matrix(mux,N,M,byrow = T))
+    # if(J==1){
+    #   for(i in 1:nimps){  ################# probably a better way to do this loop; could possibly do without the loop?
+    #     Xall <- sweep(Xall,1:2,STATS = xihat[,i]%*%t(phi[,1])/nimps,FUN = "+")
+    #   }
+    # }else{
+    #   for(i in 1:nimps){
+    #     Xall[,,i] <- Xall[,,i] + xihat[,,i]%*%t(phi[,1:J])
+    #   }
+    # }
+    # Xhat <- apply(Xall,c(1,2),mean)
+    #
+    # # Estimate Beta
+    # bhat <- matrix(NA,nrow = J,ncol = nimps)
+    # beta.hat.mat <- matrix(NA,nrow = M,ncol = nimps)
+    # beta.var <- array(NA,dim = c(M,M,nimps))
+    # alpha <- numeric(nimps)
+    # for(i in 1:nimps){
+    #   fit <- if(J==1){lm(y~xihat[,i])}else{lm(y~xihat[,,i])}
+    #   veps <- sum((fit$residuals)^2)/(N-length(fit$coefficients))
+    #   bhat[,i] <- coef(fit)[-1]
+    #   if(J==1){
+    #     beta.hat.mat[,i] <- phi[,1]*bhat[,i]
+    #     beta.var[,,i] <- phi[,1]%*%t(phi[,1])*veps/c(t(xihat[,i])%*%xihat[,i])
+    #     alpha[i] <- coef(fit)[1] - mean(phi[,1]*mux)*bhat[i]
+    #   }else{
+    #     beta.hat.mat[,i] <- phi[,1:J]%*%bhat[,i]
+    #     beta.var[,,i] <- phi[,1:J]%*%solve(t(xihat[,,i])%*%xihat[,,i])%*%t(phi[,1:J])*veps
+    #     alpha[i] <- coef(fit)[1] - sum((phi[,1:J]*mux)%*%bhat[,i])/M
+    #   }
+    # }
+    # beta.hat <- rowMeans(beta.hat.mat)
+    # alpha.hat <- mean(alpha)
+    # W <- apply(beta.var,c(1,2),mean)
+    # B <- (beta.hat.mat - beta.hat)%*%t(beta.hat.mat - beta.hat)/(nimps-1)
+    # Cbeta <- W + ((nimps+1)/nimps)*B
+    # ebeta <- eigen(Cbeta)$values
+    # beta_phi <- eigen(Cbeta)$vectors
+    #
+    # # p-value
+    # Tb <- sum(beta.hat^2)
+    # # sum(ebeta[ebeta>0]*qchisq(0.95,1,lower.tail = T))
+    # pvnorm <- imhof(Tb,ebeta[ebeta>0])[[1]]
+    # pvnorm <- ifelse(pvnorm <0 ,0,pvnorm)
 
     if(!ret_allxi){
       xi_all <- apply(xi_all,c(1,2),mean)
@@ -227,14 +256,14 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed=NULL,ret_allxi = F,use
     }
 
     ## Multitple Imputation, Conditional on outcome
-    xi_all <- cond_imp_logistic(dat,workGrid = grid,K = K,seed = seed,impute_type = "Multiple",
+    xi_all <- cond_imp_logistic(dat,workGrid = grid,nimps = nimps,seed = seed,impute_type = "Multiple",
                                 mu0 = mu0,mu1 = mu1,var_delt = var_delt,Cx = Cx,phi = phi,lam = lam)
     xihat <- xi_all[,1:J,]
 
     # Estimate X's from imputed Xi
-    Xall <- array(NA,c(N,M,K))
+    Xall <- array(NA,c(N,M,nimps))
     if(J==1){
-      for(i in 1:K){
+      for(i in 1:nimps){
         Xall[,,i] <- xihat[,i]%*%t(phi[,1])
         for(j in 1:N){
           mu_y <- if(y[j]==0){mu0}else{mu1}
@@ -242,7 +271,7 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed=NULL,ret_allxi = F,use
         }
       }
     }else{
-      for(i in 1:K){
+      for(i in 1:nimps){
         Xall[,,i] <- xihat[,,i]%*%t(phi[,1:J])
         for(j in 1:N){
           mu_y <- if(y[j]==0){mu0}else{mu1}
@@ -267,11 +296,11 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed=NULL,ret_allxi = F,use
     }
 
     # Estimate Beta
-    bhat <- matrix(NA,J,K)
-    beta.hat.mat <- matrix(NA,M,K)
-    beta.var <- array(NA,dim = c(M,M,K))
-    alpha <- numeric(K)
-    for(i in 1:K){
+    bhat <- matrix(NA,J,nimps)
+    beta.hat.mat <- matrix(NA,M,nimps)
+    beta.var <- array(NA,dim = c(M,M,nimps))
+    alpha <- numeric(nimps)
+    for(i in 1:nimps){
       if(J==1){
         fit <- glm(y~c(Xitilde[,i]),family = "binomial")
         beta.var[,,i] <- phi[,1]%*%solve(t(Xitilde[,i])%*%Xitilde[,i])%*%t(phi[,1])*vary
@@ -288,9 +317,9 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed=NULL,ret_allxi = F,use
 
     # confidence interval
     W <- apply(beta.var,c(1,2),mean)
-    B <- (beta.hat.mat - beta.hat)%*%t(beta.hat.mat - beta.hat)/(K-1)
-    Cbeta <- W + ((K+1)/K)*B
-    nu <- (K - 1)*(1+(diag(W))/((1+1/K)*diag(B)))^2 # adjusted d.f. for MI
+    B <- (beta.hat.mat - beta.hat)%*%t(beta.hat.mat - beta.hat)/(nimps-1)
+    Cbeta <- W + ((nimps+1)/nimps)*B
+    nu <- (nimps - 1)*(1+(diag(W))/((1+1/nimps)*diag(B)))^2 # adjusted d.f. for MI
     tbeta <- qt(p = c(.975),df = nu)
     # beta_muc_lwr <- beta.hat - tbeta*sqrt(diag(Cbeta))
     # beta_muc_upr <- beta.hat + tbeta*sqrt(diag(Cbeta))
@@ -313,7 +342,9 @@ misfit <- function(dat,grid,K=10,J,family="Gaussian",seed=NULL,ret_allxi = F,use
     }
   }
 
-  out <- list(params = ipars[['params']], xiest = xi_all, Xest = Xhat, pvnorm = pvnorm,
-              beta.hat = beta.hat, alpha.hat = alpha.hat, Cbeta = Cbeta, W = W, B = B)
+  out <- list(params = ipars, Xiest = Xiest, Xhat = Xhat, pvnorm = pvnorm,
+              beta.hat = beta.hat, alpha.hat = alpha.hat,
+              var.w = W, var.b = B, Cbeta = v.t,
+              run.time = run.time)
   return(out)
 }
