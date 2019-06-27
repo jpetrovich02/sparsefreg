@@ -15,10 +15,16 @@
 #'  (linear regression) and "Binomial" (logistic regression) are supported.
 #'@param seed An integer used to specify the seed. Optional, but useful for making results reproducible in the
 #'  Multiple Imputation step.
+#'@param impute_type A string indicating whether to use mean or multiple imputation.
+#'  Only accepts "Mean" or "Multiple". Defaults to "Multiple".
+#'@param cond.y A boolean indicating whehter to condition on the response variable when imputing.
+#'  Defaults to TRUE.
 #'@param ret_allxi logical-valued.. Indicates whether or not to return all \code{nimps}
 #'  imputed sets of scores. If FALSE (default), returns the average scores across the \code{nimps} imputations.
 #'@param user_params An optional list of user-defined imputation parameters. Currently, the user must provide
 #'  either all necessary imputation parameters, or none. See 'Details'.
+#'@param use_fcr A boolean indicating whether to use fcr or pace when estimating the necessary imputation
+#'  parameters. TRUE indicates fcr, FALSE indicates pace. Default is TRUE. See 'Details' for more discussion.
 #'@param fcr.args A list of arguments which can be passed to \code{fcr} (for the estimation of imputaion
 #'  parameters). Default is to use \code{use_bam} = T and \code{niter} = 1. The list must not contain the
 #'  formula, which is constructed within \code{misfit}. See \code{fcr} for more details.
