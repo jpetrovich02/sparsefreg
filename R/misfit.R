@@ -143,7 +143,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       if(is.null(user_params)){
         par.est <- param_est_linear(dat,grid,cond.y,use_fcr,k = k,nPhi = nPhi,
                                   fcr.args = fcr.args,face.args = face.args)
-        ipars <- par.est[["parameters"]]
+        ipars <- par.est[["params"]]
         run.time[["est"]] <- par.est[["runtime"]]
         # muy <- ipars[["muy"]];  var_y <- ipars[["var_y"]]
         # Cxy <- ipars[["Cxy"]];  Cx <- ipars[["Cx"]]
