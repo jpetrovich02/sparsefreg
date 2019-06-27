@@ -173,7 +173,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
                            var_delt = ipars[["var_delt"]],Cx = ipars[["Cx"]],
                            mux = ipars[["mux"]],phi = ipars[["phi"]],lam = ipars[["lam"]])
     }
-    run.time[["imp"]] <- imp.start - proc.time()
+    run.time[["imp"]] <- proc.time() - imp.start
 
     # Obtain regression estimates using imputed scores
     if(impute_type=="Multiple"){
