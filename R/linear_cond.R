@@ -9,7 +9,7 @@
 #'       expected to have variables 'X','y','subj', and 'argvals'.
 #'@param workGrid A vector of the unique desired grid points on which to evaluate the function.
 #'       The length of this vector will be called \eqn{M}.
-#'@param k An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".
+#'@param nimps An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".
 #'@param seed A numeric value used to set the seed for reproducibility (useful for multiple imputation).
 #'@param impute_type A string used to choose between mean and multiple imputation. Should be one of "Mean"
 #'       or "Multiple".
@@ -28,13 +28,13 @@
 #'and 'argvals' should indicate the time point at which each observation was made
 #'(note that these values should be a subset of \code{workGrid}).
 #'@return Either a \eqn{N\times J} matrix of imputed scores if \code{impute_type} is set to "Mean", or a 3-dimensional array
-#'of dimension \eqn{N\times J\times k} if \code{impute_type} is set to "Multiple".
+#'of dimension \eqn{N\times J\times nimps} if \code{impute_type} is set to "Multiple".
 #'@author Jusitn Petrovich, \email{jpetrovich02@@gmail.com}
 #'@references
 #'@example
 #'@export
 
-cond_imp_lm <- function(dat,workGrid,k=5,seed=NULL,impute_type="Multiple",
+cond_imp_lm <- function(dat,workGrid,nimps=10,seed=NULL,impute_type="Multiple",
                         muy=NULL,var_y=NULL,Cxy,var_delt=NULL,mux=NULL,Cx=NULL,
                         phi=NULL,lam=NULL,tol=1e-05){
   if(!is.null(seed)){set.seed(seed)}
@@ -42,7 +42,7 @@ cond_imp_lm <- function(dat,workGrid,k=5,seed=NULL,impute_type="Multiple",
   N <- length(unique(dat[,"subj"]))
   y <- dat$y
   if(impute_type=="Multiple"){
-    out <- array(NA,c(N,J,k))
+    out <- array(NA,c(N,J,nimps))
   }
   if(impute_type=="Mean"){
     out <- matrix(NA,N,J)
@@ -80,9 +80,9 @@ cond_imp_lm <- function(dat,workGrid,k=5,seed=NULL,impute_type="Multiple",
         eval[eval<0] <- 0
       }
       Lam <- if(J==1){eval}else{diag(eval)}
-      Z <- matrix(rnorm(J*k),J,k)
+      Z <- matrix(rnorm(J*nimps),J,nimps)
       out[i,,] <- if(J==1){c(mu_star)+U*sqrt(Lam)*Z}else{c(mu_star) + U%*%sqrt(Lam)%*%Z}
-      # out[i,,] <- t(mvrnorm(k,mu_star,sig_star,tol = tol))
+      # out[i,,] <- t(mvrnorm(nimps,mu_star,sig_star,tol = tol))
     }
   }
   return(out)
