@@ -24,10 +24,10 @@
 #'@export
 
 
-param_est_linear <- function(dat,workGrid,cond.y=TRUE,use_fcr = TRUE,fcr.args = list(use_bam = T,niter = 1),
+param_est_linear <- function(dat,workGrid,M,cond.y=TRUE,use_fcr = TRUE,fcr.args = list(use_bam = T,niter = 1),
                              k = 15,nPhi = NULL,face.args=list(knots = 12, pve = 0.95),
                              FPCA.args = NULL){
-  N <- length(unique(dat[,"subj"]))
+  # N <- length(unique(dat[,"subj"]))
   start_time <- proc.time()
   if(cond.y){
     muy <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(mean(y)))[[1]]
@@ -36,7 +36,7 @@ param_est_linear <- function(dat,workGrid,cond.y=TRUE,use_fcr = TRUE,fcr.args = 
     if(use_fcr){
       params <- param_est_fcr(dat,workGrid,cond.y,fcr.args,k,nPhi,face.args)
     }else{
-      params <- param_est_pace(dat,workGrid,cond.y,FPCA.args)
+      params <- param_est_pace(dat,M,cond.y,FPCA.args)
     }
     # ks <- deparse(substitute(k))
     # if(!is.null(nPhi)){fcr.args['nPhi'] <- nPhi}
@@ -85,7 +85,7 @@ param_est_linear <- function(dat,workGrid,cond.y=TRUE,use_fcr = TRUE,fcr.args = 
       params <- list(mux = mux,Cx = Cx,lam = lam,phi = phi,var_delt = var_delt)
       # pve = fit$pve
     }else{
-      params <- param_est_pace(dat,workGrid,cond.y,FPCA.args)
+      params <- param_est_pace(dat,M,cond.y,FPCA.args)
     }
   }
   runtime <- proc.time() - start_time
