@@ -237,10 +237,12 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       veps <- sum((fit$residuals)^2)/(N-length(fit$coefficients))
       ipars[["var_eps"]] <- veps
       b.hat <- coef(fit)[-1]
-      beta.hat <- if(J==1){
-        ipars[["phi"]][,1]*b.hat
+      if(J==1){
+        beta.hat <- ipars[["phi"]][,1]*b.hat
+        alpha.hat <- coef(fit)[1] - mean(ipars[["phi"]][,1]*ipars[["mux"]])*b.hat
       }else{
-        ipars[["phi"]][,1:J]%*%b.hat
+        beta.hat <- ipars[["phi"]][,1:J]%*%b.hat
+        alpha.hat <- coef(fit)[1] - sum((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%b.hat)/M
       }
       beta.var <- ipars[["phi"]][,1:J]%*%solve(t(Xiest)%*%Xiest)%*%t(ipars[["phi"]][,1:J])*veps
       Cbeta <- beta.var
