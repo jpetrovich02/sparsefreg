@@ -164,12 +164,12 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
     # Impute Scores
     imp.start <- proc.time()
     if(cond.y){
-      scores_all <- cond_imp_lm(dat,workGrid = workGrid,nimps = nimps,seed = seed,impute_type = impute_type,
+      scores_all <- cond_imp_lm(dat,workGrid = grid,nimps = nimps,seed = seed,impute_type = impute_type,
                             muy = ipars[["muy"]],var_y = ipars[["var_y"]],Cxy = ipars[["Cxy"]],
                             var_delt = ipars[["var_delt"]],Cx = ipars[["Cx"]],mux = ipars[["mux"]],
                             phi = ipars[["phi"]],lam = ipars[["lam"]])
     }else if(!cond.y){
-      scores_all <- uncond_imp(dat,workGrid = workGrid,nimps = nimps,seed = seed,impute_type = impute_type,
+      scores_all <- uncond_imp(dat,workGrid = grid,nimps = nimps,seed = seed,impute_type = impute_type,
                            var_delt = ipars[["var_delt"]],Cx = ipars[["Cx"]],
                            mux = ipars[["mux"]],phi = ipars[["phi"]],lam = ipars[["lam"]])
     }
