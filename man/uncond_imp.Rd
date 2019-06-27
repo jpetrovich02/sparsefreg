@@ -4,9 +4,9 @@
 \alias{uncond_imp}
 \title{Unconditional Imputation}
 \usage{
-uncond_imp(dat, workGrid, k = 10, seed = NULL, impute_type = "Multiple",
-  var_delt = NULL, mux = NULL, Cx = NULL, phi = NULL, lam = NULL,
-  tol = 1e-05)
+uncond_imp(dat, workGrid, nimps = 10, seed = NULL,
+  impute_type = "Multiple", var_delt = NULL, mux = NULL, Cx = NULL,
+  phi = NULL, lam = NULL, tol = 1e-05)
 }
 \arguments{
 \item{dat}{An \eqn{n \times 3} data frame (where \eqn{N} is the number of subjects,
@@ -16,7 +16,7 @@ expected to have variables 'X','subj', and 'argvals'.}
 \item{workGrid}{A vector of the unique desired grid points on which to evaluate the function.
 The length of this vector will be called \eqn{M}.}
 
-\item{k}{An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".}
+\item{nimps}{An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".}
 
 \item{seed}{A numeric value used to set the seed for reproducibility (useful for multiple imputation).}
 
@@ -37,7 +37,7 @@ or "Multiple".}
 }
 \value{
 Either a \eqn{N\times J} matrix of imputed scores if \code{impute_type} is set to "Mean", or a 3-dimensional array
-of dimension \eqn{N\times J\times k} if \code{impute_type} is set to "Multiple".
+of dimension \eqn{N\times J\times nimps} if \code{impute_type} is set to "Multiple".
 }
 \description{
 Given the imputation parameters, this function imputes the scores using

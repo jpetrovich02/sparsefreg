@@ -4,9 +4,11 @@
 \alias{misfit}
 \title{MISFIT (Multiple Imputation for Sparsely-sampled Functions at Irregular Times)}
 \usage{
-misfit(dat, grid, K = 10, J, family = "Gaussian", seed = NULL,
-  ret_allxi = F, user_params = NULL, fcr.args = list(use_bam = T, niter =
-  1), k = 15, nPhi = NULL, face.args = list(knots = 12, pve = 0.95))
+misfit(dat, grid, nimps = 10, J, family = "Gaussian", seed = NULL,
+  impute_type = "Multiple", cond.y = T, ret_allxi = F,
+  user_params = NULL, use_fcr = TRUE, fcr.args = list(use_bam = T,
+  niter = 1), k = 15, nPhi = NULL, face.args = list(knots = 12, pve =
+  0.95))
 }
 \arguments{
 \item{dat}{A data frame with \eqn{n} rows (where \eqn{N} is the number of subjects,
@@ -17,7 +19,7 @@ is FALSE, only 3 columns are needed (no 'y' variable is used).}
 
 \item{grid}{A length \eqn{M} vector of the unique desired grid points on which to evaluate the function.}
 
-\item{K}{An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".}
+\item{nimps}{An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".}
 
 \item{J}{An integer specifying the number of FPCs to include in the regression model.}
 
@@ -27,11 +29,20 @@ is FALSE, only 3 columns are needed (no 'y' variable is used).}
 \item{seed}{An integer used to specify the seed. Optional, but useful for making results reproducible in the
 Multiple Imputation step.}
 
-\item{ret_allxi}{logical-valued.. Indicates whether or not to return all \code{K}
-imputed sets of scores. If FALSE (default), returns the average scores across the \code{K} imputations.}
+\item{impute_type}{A string indicating whether to use mean or multiple imputation.
+Only accepts "Mean" or "Multiple". Defaults to "Multiple".}
+
+\item{cond.y}{A boolean indicating whehter to condition on the response variable when imputing.
+Defaults to TRUE.}
+
+\item{ret_allxi}{logical-valued.. Indicates whether or not to return all \code{nimps}
+imputed sets of scores. If FALSE (default), returns the average scores across the \code{nimps} imputations.}
 
 \item{user_params}{An optional list of user-defined imputation parameters. Currently, the user must provide
 either all necessary imputation parameters, or none. See 'Details'.}
+
+\item{use_fcr}{A boolean indicating whether to use \code{\link[fcr]{fcr}} or \code{\link[fdapace]{FPCA}} when estimating the necessary imputation
+parameters. TRUE indicates fcr, FALSE indicates pace. Default is TRUE. See 'Details' for more discussion.}
 
 \item{fcr.args}{A list of arguments which can be passed to \code{fcr} (for the estimation of imputaion
 parameters). Default is to use \code{use_bam} = T and \code{niter} = 1. The list must not contain the
@@ -85,6 +96,13 @@ When using the \code{user_params} argument, the user must supply a list containi
     eigenfunctions of \eqn{C_X(t,s)} (one per column) evaluated on \code{grid}. Should not be missing
     any values.
  }
+
+ By default, use_fcr is TRUE, meaning that fcr is used to estimate imputation parameters.
+ Using FPCA (i.e. use_fcr = FALSE) is roughly 10 times faster, at least for small to moderate data sets.
+ For a single use of the function, this difference is not meaningful as both methods complete in under a minute.
+ But when performing simulations, this speed difference is significant.
+ More testing is needed to determine which method more accuartely estimates the imputation parameters. See
+ 'References' below for details on the methods used in fcr and FPCA.
 }
 \examples{
 
@@ -101,7 +119,7 @@ M <- 100 # grid size
 N <- 400 # sample size
 m <- 2 # observations per subject
 J <- 5 # number of FPCs to use
-K <- 10 # number of imputations
+nimps <- 10 # number of imputations
 var_eps <- 1 # variance of model error
 var_delt <- 0.5 # variance of measurement error
 grid <- seq(from=0,to=1,length.out = M)
@@ -141,8 +159,13 @@ T_mat[spt,]<-grid[ind_obs[spt,]]
 obsdf <- data.frame("X" = c(t(X_mat)),"argvals" = c(t(T_mat)),
                    "y" = rep(y,each = m),"subj" = rep(1:N,each = m))
 
-misfit_out <- misfit(obsdf,grid = grid,K = K,J = J,family = "Gaussian",user_params = NULL,k = 12)
+misfit_out <- misfit(obsdf,grid = grid,nimps = nimps,J = J)
 
 }
 
+}
+\references{
+\cite{Leroux, A., Xiao, L., Crainiceanu, C., & Checkley, W. (2018). Dynamic prediction in functional concurrent regression with an application to child growth. Statistics in medicine, 37(8), 1376-1388.}
+
+\cite{Yao, Fang, Hans-Georg Mueller, and Jane-Ling Wang. "Functional data analysis for sparse longitudinal data." Journal of the American Statistical Association 100, no. 470 (2005): 577-590.}
 }

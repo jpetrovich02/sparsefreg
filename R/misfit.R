@@ -23,7 +23,7 @@
 #'  imputed sets of scores. If FALSE (default), returns the average scores across the \code{nimps} imputations.
 #'@param user_params An optional list of user-defined imputation parameters. Currently, the user must provide
 #'  either all necessary imputation parameters, or none. See 'Details'.
-#'@param use_fcr A boolean indicating whether to use fcr or pace when estimating the necessary imputation
+#'@param use_fcr A boolean indicating whether to use \code{\link[fcr]{fcr}} or \code{\link[fdapace]{FPCA}} when estimating the necessary imputation
 #'  parameters. TRUE indicates fcr, FALSE indicates pace. Default is TRUE. See 'Details' for more discussion.
 #'@param fcr.args A list of arguments which can be passed to \code{fcr} (for the estimation of imputaion
 #'  parameters). Default is to use \code{use_bam} = T and \code{niter} = 1. The list must not contain the
@@ -71,8 +71,20 @@
 #'     eigenfunctions of \eqn{C_X(t,s)} (one per column) evaluated on \code{grid}. Should not be missing
 #'     any values.
 #'  }
+#'
+#'  By default, use_fcr is TRUE, meaning that fcr is used to estimate imputation parameters.
+#'  Using FPCA (i.e. use_fcr = FALSE) is roughly 10 times faster, at least for small to moderate data sets.
+#'  For a single use of the function, this difference is not meaningful as both methods complete in under a minute.
+#'  But when performing simulations, this speed difference is significant.
+#'  More testing is needed to determine which method more accuartely estimates the imputation parameters. See
+#'  'References' below for details on the methods used in fcr and FPCA.
+#'
+#'
 #'@return
 #'@references
+#'\cite{Leroux, A., Xiao, L., Crainiceanu, C., & Checkley, W. (2018). Dynamic prediction in functional concurrent regression with an application to child growth. Statistics in medicine, 37(8), 1376-1388.}
+#'
+#'\cite{Yao, Fang, Hans-Georg Mueller, and Jane-Ling Wang. "Functional data analysis for sparse longitudinal data." Journal of the American Statistical Association 100, no. 470 (2005): 577-590.}
 #'@examples
 #'
 #'\dontrun{
@@ -128,7 +140,7 @@
 #'obsdf <- data.frame("X" = c(t(X_mat)),"argvals" = c(t(T_mat)),
 #'                    "y" = rep(y,each = m),"subj" = rep(1:N,each = m))
 #'
-#'misfit_out <- misfit(obsdf,grid = grid,nimps = nimps,J = J,family = "Gaussian",user_params = NULL,k = 12)
+#'misfit_out <- misfit(obsdf,grid = grid,nimps = nimps,J = J)
 #'
 #'}
 #'

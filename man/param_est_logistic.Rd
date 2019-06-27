@@ -4,9 +4,9 @@
 \alias{param_est_logistic}
 \title{Imputation Parameter Estimation for Logistic Regression}
 \usage{
-param_est_logistic(dat, workGrid, cond.y = TRUE, p, fcr.args = list(use_bam
-  = T, niter = 1), k = 15, nPhi = NULL, face.args = list(knots = 12, pve =
-  0.95))
+param_est_logistic(dat, workGrid, cond.y = TRUE, p,
+  fcr.args = list(use_bam = T, niter = 1), k = 15, nPhi = NULL,
+  face.args = list(knots = 12, pve = 0.95))
 }
 \arguments{
 \item{dat}{A data frame with \eqn{n} rows (where \eqn{N} is the number of subjects,

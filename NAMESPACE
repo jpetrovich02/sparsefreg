@@ -3,6 +3,8 @@
 export(cond_imp_lm)
 export(cond_imp_logistic)
 export(misfit)
+export(param_est_fcr)
 export(param_est_linear)
 export(param_est_logistic)
+export(param_est_pace)
 export(uncond_imp)

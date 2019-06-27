@@ -4,9 +4,9 @@
 \alias{param_est_linear}
 \title{Imputation Parameter Estimation for Linear Regression}
 \usage{
-param_est_linear(dat, workGrid, cond.y = TRUE, fcr.args = list(use_bam = T,
-  niter = 1), k = 15, nPhi = NULL, face.args = list(knots = 12, pve =
-  0.95))
+param_est_linear(dat, workGrid, M, cond.y = TRUE, use_fcr = TRUE,
+  fcr.args = list(use_bam = T, niter = 1), k = 15, nPhi = NULL,
+  face.args = list(knots = 12, pve = 0.95), FPCA.args = NULL)
 }
 \arguments{
 \item{dat}{A data frame with \eqn{n} rows (where \eqn{N} is the number of subjects,
