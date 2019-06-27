@@ -88,6 +88,6 @@ param_est_linear <- function(dat,workGrid,cond.y=TRUE,use_fcr = TRUE,fcr.args = 
       params <- param_est_pace(dat,workGrid,cond.y,FPCA.args)
     }
   }
-  run_time <- proc.time() - start_time
+  runtime <- proc.time() - start_time
   return(list(params = params,runtime = runtime))
 }
