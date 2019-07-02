@@ -169,6 +169,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
   N <- length(unique(dat$subj))
 
   if(family=="Gaussian"){
+
     # Estimate imputation parameters
     if(is.null(user_params)){
       par.est <- param_est_linear(dat,grid,M,cond.y,use_fcr,k = k,nPhi = nPhi,
@@ -239,7 +240,11 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       var.t <- var.w + ((nimps+1)/nimps)*var.b
       Cbeta <- list(var.w = var.w,var.b = var.b,var.t = var.t)
 
-      pvnorm <- NULL
+      # p-value
+      ev <- eigen(var.t)$values
+      Tb <- sum(beta.hat^2)
+      pvnorm <- imhof(Tb,ev[ev > 0])[[1]]
+      pvnorm <- ifelse(pvnorm < 0 ,0,pvnorm)
     }else if(impute_type=="Mean"){
       Xiest <- scores_all[,1:J]
 
@@ -265,61 +270,12 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       beta.var <- ipars[["phi"]][,1:J]%*%solve(t(Xiest)%*%Xiest)%*%t(ipars[["phi"]][,1:J])*veps
       Cbeta <- beta.var
 
-      pvnorm <- NULL
+      # p-value
+      ev <- eigen(Cbeta)$values
+      Tb <- sum(beta.hat^2)
+      pvnorm <- imhof(Tb,ev[ev > 0])[[1]]
+      pvnorm <- ifelse(pvnorm < 0 ,0,pvnorm)
     }
-
-    # ## Multitple Imputation, Conditional on outcome
-    # xi_all <- cond_imp_lm(dat,workGrid = grid,k = nimps,impute_type = "Multiple",
-    #                       muy = muy,var_y = var_y,Cxy = Cxy,var_delt = var_delt,
-    #                       Cx = Cx,mux = mux,phi = phi,lam = lam,seed = seed)
-    # xihat <- xi_all[,1:J,]
-    #
-    # # Estimate X's from imputed Xi
-    # Xall <- array(0,c(N,M,nimps))
-    # Xall <- sweep(Xall,MARGIN = c(1,2),FUN = "+",STATS = matrix(mux,N,M,byrow = T))
-    # if(J==1){
-    #   for(i in 1:nimps){  ################# probably a better way to do this loop; could possibly do without the loop?
-    #     Xall <- sweep(Xall,1:2,STATS = xihat[,i]%*%t(phi[,1])/nimps,FUN = "+")
-    #   }
-    # }else{
-    #   for(i in 1:nimps){
-    #     Xall[,,i] <- Xall[,,i] + xihat[,,i]%*%t(phi[,1:J])
-    #   }
-    # }
-    # Xhat <- apply(Xall,c(1,2),mean)
-    #
-    # # Estimate Beta
-    # bhat <- matrix(NA,nrow = J,ncol = nimps)
-    # beta.hat.mat <- matrix(NA,nrow = M,ncol = nimps)
-    # beta.var <- array(NA,dim = c(M,M,nimps))
-    # alpha <- numeric(nimps)
-    # for(i in 1:nimps){
-    #   fit <- if(J==1){lm(y~xihat[,i])}else{lm(y~xihat[,,i])}
-    #   veps <- sum((fit$residuals)^2)/(N-length(fit$coefficients))
-    #   bhat[,i] <- coef(fit)[-1]
-    #   if(J==1){
-    #     beta.hat.mat[,i] <- phi[,1]*bhat[,i]
-    #     beta.var[,,i] <- phi[,1]%*%t(phi[,1])*veps/c(t(xihat[,i])%*%xihat[,i])
-    #     alpha[i] <- coef(fit)[1] - mean(phi[,1]*mux)*bhat[i]
-    #   }else{
-    #     beta.hat.mat[,i] <- phi[,1:J]%*%bhat[,i]
-    #     beta.var[,,i] <- phi[,1:J]%*%solve(t(xihat[,,i])%*%xihat[,,i])%*%t(phi[,1:J])*veps
-    #     alpha[i] <- coef(fit)[1] - sum((phi[,1:J]*mux)%*%bhat[,i])/M
-    #   }
-    # }
-    # beta.hat <- rowMeans(beta.hat.mat)
-    # alpha.hat <- mean(alpha)
-    # W <- apply(beta.var,c(1,2),mean)
-    # B <- (beta.hat.mat - beta.hat)%*%t(beta.hat.mat - beta.hat)/(nimps-1)
-    # Cbeta <- W + ((nimps+1)/nimps)*B
-    # ebeta <- eigen(Cbeta)$values
-    # beta_phi <- eigen(Cbeta)$vectors
-    #
-    # # p-value
-    # Tb <- sum(beta.hat^2)
-    # # sum(ebeta[ebeta>0]*qchisq(0.95,1,lower.tail = T))
-    # pvnorm <- imhof(Tb,ebeta[ebeta>0])[[1]]
-    # pvnorm <- ifelse(pvnorm <0 ,0,pvnorm)
 
     # if(!ret_allxi){
     #   xi_all <- apply(xi_all,c(1,2),mean)
