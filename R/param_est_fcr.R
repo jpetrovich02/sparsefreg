@@ -4,7 +4,7 @@
 #'@example
 #'@export
 
-param_est_fcr <- function(dat,workGrid,cond.y,fcr.args,k,nPhi,face.args){
+param_est_fcr <- function(dat,workGrid,muy,var_y,fcr.args,k,nPhi,face.args){
   rhs <- paste("~ ", "s(argvals, k =", k,", bs = \"ps\") + s(argvals, by = y, k =", k,", bs = \"ps\")")
   model <- update.formula(rhs, "X ~ .")
   fit <- do.call("fcr",c(list(formula = model, data = dat, subj = "subj",
