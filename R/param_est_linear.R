@@ -25,7 +25,7 @@
 
 
 param_est_linear <- function(dat,workGrid,M,cond.y=TRUE,use_fcr = TRUE,fcr.args = list(use_bam = T,niter = 1),
-                             k = 15,nPhi = NULL,face.args=list(knots = 12, pve = 0.95),
+                             k = -1,nPhi = NULL,face.args=list(knots = 12, lower = -3, pve = 0.95),
                              FPCA.args = NULL){
   N <- length(unique(dat[,"subj"]))
   start_time <- proc.time()
@@ -42,7 +42,7 @@ param_est_linear <- function(dat,workGrid,M,cond.y=TRUE,use_fcr = TRUE,fcr.args 
     }
 
     if(use_fcr){
-      params <- param_est_fcr(dat,workGrid,cond.y,fcr.args,k,nPhi,face.args)
+      params <- param_est_fcr(dat,workGrid,muy,var_y,fcr.args,k,nPhi,face.args)
     }else{
       params <- param_est_pace(dat,M,cond.y,muy,FPCA.args)
     }
