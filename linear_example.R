@@ -47,31 +47,61 @@ muy <- c(t(mux)%*%beta/M)
 var_y <- c(t(beta)%*%Cx%*%beta/(M^2)) + var_eps
 # var_y <- t(beta)%*%Cx%*%beta/(M^2) - (mean(mux*beta))^2 + var_eps
 
-X_mat<-matrix(nrow=N,ncol=m)
-T_mat<-matrix(nrow=N,ncol=m)
-ind_obs<-matrix(nrow=N,ncol=m)
+# X_mat<-matrix(nrow=N,ncol=m)
+# T_mat<-matrix(nrow=N,ncol=m)
+# ind_obs<-matrix(nrow=N,ncol=m)
+#
+# for(i in 1:N){
+#   ind_obs[i,]<-sort(sample(1:M,m,replace=FALSE))
+#   X_mat[i,]<-X_comp[i,ind_obs[i,]]
+#   T_mat[i,]<-grid[ind_obs[i,]]
+# }
+#
+# spt<-1
+# ind_obs[spt,1] = 1; ind_obs[spt,m] = M
+# X_mat[spt,]<-X_comp[spt,ind_obs[spt,]]
+# T_mat[spt,]<-grid[ind_obs[spt,]]
+#
+# ## Create data frame for observed data
+# obsdf <- data.frame("X" = c(t(X_mat)),"argvals" = c(t(T_mat)),
+#                     "y" = rep(y,each = m),"subj" = rep(1:N,each = m))
+
+# Sample mi from a discrete uniform distribution s.t. E(x) = (a + b)/2 = m
+m <- m_all[jj]
+a <- 1
+b <- m*2 - a
+mi <- sample(a:b,size = N,replace = T)
+
+# Observed values
+Xl <- vector(mode = "list",length = N)
+Tl <- vector(mode = "list",length = N)
+ind_obs <- vector(mode = "list",length = N)
 
 for(i in 1:N){
-  ind_obs[i,]<-sort(sample(1:M,m,replace=FALSE))
-  X_mat[i,]<-X_comp[i,ind_obs[i,]]
-  T_mat[i,]<-grid[ind_obs[i,]]
+  ind_obs[[i]] <- sort(sample(1:M,mi[i],replace=FALSE))
+  Xl[[i]] <- X_comp[i,ind_obs[[i]]]
+  Tl[[i]] <- grid[ind_obs[[i]]]
 }
 
-spt<-1
-ind_obs[spt,1] = 1; ind_obs[spt,m] = M
-X_mat[spt,]<-X_comp[spt,ind_obs[spt,]]
-T_mat[spt,]<-grid[ind_obs[spt,]]
+# Guarantee that the boundaries of the grid have been sampled
+spt <- which(mi > 1)[1]
+ind_obs[[spt]][1] <- 1
+ind_obs[[spt]][mi[spt]] = M
+Xl[[spt]] <- X_comp[spt,ind_obs[[spt]]]
+Tl[[spt]] <- grid[ind_obs[[spt]]]
 
 ## Create data frame for observed data
-obsdf <- data.frame("X" = c(t(X_mat)),"argvals" = c(t(T_mat)),
-                    "y" = rep(y,each = m),"subj" = rep(1:N,each = m))
+obsdf <- data.frame("X" = unlist(Xl),
+                    "argvals" = unlist(Tl),
+                    "y" = rep(y,times = lengths(Xl)),
+                    "subj" = rep(1:N,times = lengths(Xl)))
 
 user_params <- list(Cx = Cx, mux = mux, var_delt = var_delt,
                     muy = muy,lam = lam, phi = phi, Cxy = Cxy,
                     var_y = var_y)
 # ks = 15
 # nPhi <- min(c(floor((nrow(obsdf) - 2*as.numeric(ks))/N),J))
-check <- misfit(obsdf,grid = grid,K = K,J = J,family = "Gaussian",user_params = NULL,k = 12)
+check <- misfit(obsdf,grid = grid,nimps = 10,J = J,family = "Gaussian",user_params = NULL,k = -1)
 check$pvnorm
 check$alpha.hat
 sum((check$beta.hat-beta)^2)/M
