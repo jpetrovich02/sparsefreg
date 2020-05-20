@@ -148,8 +148,8 @@
 
 misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type = "Multiple",
                    cond.y = T,ret_allxi = F,user_params = NULL,use_fcr = TRUE,
-                   fcr.args = list(use_bam = T,niter = 1),k = 15, nPhi = NULL,
-                   face.args=list(knots = 12, pve = 0.95)){
+                   fcr.args = list(use_bam = T,niter = 1),k = -1, nPhi = NULL,
+                   face.args=list(knots = 12, lower = -3, pve = 0.95)){
 
   # Check arguments
   if(!is.null(user_params)){
