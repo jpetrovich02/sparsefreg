@@ -364,8 +364,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
           beta.var[,,i] <- ipars[["phi"]][,1:J]%*%solve(t(Xitilde[,,i])%*%Xitilde[,,i])%*%t(ipars[["phi"]][,1:J])*vary
         }
         bhat[,i] <- coef(fit)[-1]
-        alpha[i] <- log(muy) - log(1 - muy) -
-          sum(((t(ipars[["phi"]][,1:J])%*%(ipars[["mu1"]] - ipars[["mu0"]])/M)^2)/(ipars[["lam"]][1:J]^2))/2
+        alpha[i] <- log(muy) - log(1 - muy) - sum(((t(ipars[["phi"]][,1:J])%*%(ipars[["mu1"]] - ipars[["mu0"]])/M)^2)/(ipars[["lam"]][1:J]^2))/2
         if(J==1){
           beta.hat.mat[,i] <- ipars[["phi"]][,1]*bhat[,i]
         }else{
@@ -398,7 +397,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       bhat <- coef(fit)[-1]
       beta.hat <- ipars[["phi"]][,1:J]%*%bhat
       beta.var <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
-      alpha.meu <- coef(fit)[1] - mean((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat)
+      alpha.hat <- coef(fit)[1] - mean((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat)
       Cbeta <- beta.var
 
       # p-value
@@ -408,12 +407,12 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       pvnorm <- ifelse(pvnorm < 0 ,0,pvnorm)
     }
 
-    if(!ret_allxi){
-      if(J==1){
-        xi_all <- apply(xi_all,1,mean)
-      }else
-        xi_all <- apply(xi_all,c(1,2),mean)
-    }
+    # if(!ret_allxi){
+    #   if(J==1){
+    #     xi_all <- apply(xi_all,1,mean)
+    #   }else
+    #     xi_all <- apply(xi_all,c(1,2),mean)
+    # }
   }
 
   out <- list(params = ipars, Xiest = Xiest, Xhat = Xhat, pvnorm = pvnorm,
