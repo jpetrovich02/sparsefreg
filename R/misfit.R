@@ -300,10 +300,19 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       phi <- user_params$phi;  lam <- user_params$lam
     }
 
-    ## Multitple Imputation, Conditional on outcome
-    xi_all <- cond_imp_logistic(dat,workGrid = grid,nimps = nimps,seed = seed,impute_type = "Multiple",
-                                mu0 = mu0,mu1 = mu1,var_delt = var_delt,Cx = Cx,phi = phi,lam = lam)
-    xihat <- xi_all[,1:J,]
+    # Impute Scores
+    imp.start <- proc.time()
+    if(cond.y){
+      scores_all <- cond_imp_logistic(dat,workGrid = grid,nimps = nimps,seed = seed,impute_type = impute_type,
+                                      mu0 = ipars[["mu0"]],mu1 = ipars[["mu1"]],var_delt = ipars[["var_delt"]],
+                                      Cx = ipars[["Cx"]],phi = ipars[["phi"]],lam = ipars[["lam"]])
+      xihat <- xi_all[,1:J,]
+    }else if(!cond.y){
+      scores_all <- uncond_imp(dat,workGrid = grid,nimps = nimps,seed = seed,impute_type = impute_type,
+                               var_delt = ipars[["var_delt"]],Cx = ipars[["Cx"]],
+                               mux = ipars[["mux"]],phi = ipars[["phi"]],lam = ipars[["lam"]])
+    }
+    run.time[["imp"]] <- proc.time() - imp.start
 
     # Estimate X's from imputed Xi
     Xall <- array(NA,c(N,M,nimps))
