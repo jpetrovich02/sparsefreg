@@ -294,7 +294,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       ipars <- par.est[["params"]]
       run.time[["est"]] <- par.est[["runtime"]]
     }else{
-      ipars = list(params = user_params)
+      ipars = user_params
     }
 
     # Impute Scores
