@@ -321,7 +321,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         for(i in 1:nimps){
           Xall[,,i] <- scores_imp[,i]%*%t(ipars[["phi"]][,1])
           for(j in 1:N){
-            mu_y <- ifelse(y[j]==0,mu0,mu1)
+            mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
             Xall[j,,i] <- Xall[j,,i] + mu_y
           }
         }
@@ -329,7 +329,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         for(i in 1:nimps){
           Xall[,,i] <- scores_imp[,,i]%*%t(ipars[["phi"]][,1:J])
           for(j in 1:N){
-            mu_y <- ifelse(y[j]==0,mu0,mu1)
+            mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
             Xall[j,,i] <- Xall[j,,i] + mu_y
           }
         }
