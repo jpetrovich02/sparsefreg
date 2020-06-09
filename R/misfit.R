@@ -382,19 +382,31 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       Cbeta <- list(var.w = var.w,var.b = var.b,var.t = var.t)
 
       # P-value
-      # Imhof approximation
       ev <- eigen(var.t)$values
       Tb <- sum(beta.hat^2)
       pvnorm <- imhof(Tb,ev[ev > 0])[[1]]
       pvnorm <- ifelse(pvnorm <0 ,0,pvnorm)
 
     }else if(impute_type=="Mean"){
+      Xiest <- scores_all[,1:J]
 
+      # Estimate X's from imputed scores
+      Xhat <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xiest))
+
+      # Beta estimate
+      fit <- glm(y~Xiest,family = "binomial")
+      bhat <- coef(fit)[-1]
+      beta.hat <- ipars[["phi"]][,1:J]%*%bhat
+      beta.var <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
+      alpha.meu <- coef(fit)[1] - mean((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat)
+      Cbeta <- beta.var
+
+      # p-value
+      ev <- eigen(Cbeta)$values
+      Tb <- sum(beta.hat^2)
+      pvnorm <- imhof(Tb,ev[ev > 0])
+      pvnorm <- ifelse(pvnorm < 0 ,0,pvnorm)
     }
-
-
-
-
 
     if(!ret_allxi){
       if(J==1){
