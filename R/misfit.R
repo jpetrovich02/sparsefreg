@@ -398,7 +398,6 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       beta.hat <- rowMeans(beta.hat.mat)
       alpha.hat <- mean(alpha)
 
-
       var.w <- apply(beta.var,c(1,2),mean)
       var.b <- (beta.hat.mat - beta.hat)%*%t(beta.hat.mat - beta.hat)/(nimps-1)
       var.t <- var.w + ((nimps+1)/nimps)*var.b
