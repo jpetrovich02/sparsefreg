@@ -315,62 +315,86 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       scores_imp <- scores_all[,1:J,]
       Xiest <- apply(scores_imp,MARGIN = c(1,2),mean)
 
-      # Estimate X's from imputed scores
-      Xall <- array(NA,c(N,M,nimps))
-      if(J==1){
-        for(i in 1:nimps){
-          Xall[,,i] <- scores_imp[,i]%*%t(ipars[["phi"]][,1])
-          for(j in 1:N){
-            mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
-            Xall[j,,i] <- Xall[j,,i] + mu_y
+      if(cond.y){
+        # Estimate X's from imputed scores
+        Xall <- array(NA,c(N,M,nimps))
+        if(J==1){
+          for(i in 1:nimps){
+            Xall[,,i] <- scores_imp[,i]%*%t(ipars[["phi"]][,1])
+            for(j in 1:N){
+              mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
+              Xall[j,,i] <- Xall[j,,i] + mu_y
+            }
+          }
+        }else{
+          for(i in 1:nimps){
+            Xall[,,i] <- scores_imp[,,i]%*%t(ipars[["phi"]][,1:J])
+            for(j in 1:N){
+              mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
+              Xall[j,,i] <- Xall[j,,i] + mu_y
+            }
           }
         }
-      }else{
+        Xhat <- apply(Xall,c(1,2),mean)
+
+        # Add back the means to scores_imp
+        Xitilde <- scores_imp
+        if(J==1){
+          mean0j <- mean(ipars[["mu0"]]*ipars[["phi"]][,1])
+          mean1j <- mean(ipars[["mu1"]]*ipars[["phi"]][,1])
+          Xitilde[which(y==0),] <- Xitilde[which(y==0),] + mean0j
+          Xitilde[which(y==1),] <- Xitilde[which(y==1),] + mean1j
+        }else{
+          mean0j <- colMeans(ipars[["mu0"]]*ipars[["phi"]][,1:J])
+          mean1j <- colMeans(ipars[["mu1"]]*ipars[["phi"]][,1:J])
+          Xitilde[which(y==0),,] <- aperm(apply(Xitilde[which(y==0),,],c(1,3),function(x) x + mean0j),c(2,1,3))
+          Xitilde[which(y==1),,] <- aperm(apply(Xitilde[which(y==1),,],c(1,3),function(x) x + mean1j),c(2,1,3))
+        }
+
+        # Estimate Beta
+        bhat <- matrix(NA,J,nimps)
+        beta.hat.mat <- matrix(NA,M,nimps)
+        beta.var <- array(NA,dim = c(M,M,nimps))
+        alpha <- numeric(nimps)
         for(i in 1:nimps){
-          Xall[,,i] <- scores_imp[,,i]%*%t(ipars[["phi"]][,1:J])
-          for(j in 1:N){
-            mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
-            Xall[j,,i] <- Xall[j,,i] + mu_y
+          if(J==1){
+            fit <- glm(y~c(Xitilde[,i]),family = "binomial")
+            beta.var[,,i] <- ipars[["phi"]][,1]%*%solve(t(Xitilde[,i])%*%Xitilde[,i])%*%t(ipars[["phi"]][,1])*vary
+          }else{
+            fit <- glm(y~Xitilde[,,i],family = "binomial")
+            beta.var[,,i] <- ipars[["phi"]][,1:J]%*%solve(t(Xitilde[,,i])%*%Xitilde[,,i])%*%t(ipars[["phi"]][,1:J])*vary
+          }
+          bhat[,i] <- coef(fit)[-1]
+          alpha[i] <- log(muy) - log(1 - muy) - sum(((t(ipars[["phi"]][,1:J])%*%(ipars[["mu1"]] - ipars[["mu0"]])/M)^2)/(ipars[["lam"]][1:J]^2))/2
+          if(J==1){
+            beta.hat.mat[,i] <- ipars[["phi"]][,1]*bhat[,i]
+          }else{
+            beta.hat.mat[,i] <- ipars[["phi"]][,1:J]%*%bhat[,i]
           }
         }
-      }
-      Xhat <- apply(Xall,c(1,2),mean)
 
-      # Add back the means to scores_imp
-      Xitilde <- scores_imp
-      if(J==1){
-        mean0j <- mean(ipars[["mu0"]]*ipars[["phi"]][,1])
-        mean1j <- mean(ipars[["mu1"]]*ipars[["phi"]][,1])
-        Xitilde[which(y==0),] <- Xitilde[which(y==0),] + mean0j
-        Xitilde[which(y==1),] <- Xitilde[which(y==1),] + mean1j
-      }else{
-        mean0j <- colMeans(ipars[["mu0"]]*ipars[["phi"]][,1:J])
-        mean1j <- colMeans(ipars[["mu1"]]*ipars[["phi"]][,1:J])
-        Xitilde[which(y==0),,] <- aperm(apply(Xitilde[which(y==0),,],c(1,3),function(x) x + mean0j),c(2,1,3))
-        Xitilde[which(y==1),,] <- aperm(apply(Xitilde[which(y==1),,],c(1,3),function(x) x + mean1j),c(2,1,3))
-      }
-
-      # Estimate Beta
-      bhat <- matrix(NA,J,nimps)
-      beta.hat.mat <- matrix(NA,M,nimps)
-      beta.var <- array(NA,dim = c(M,M,nimps))
-      alpha <- numeric(nimps)
-      for(i in 1:nimps){
-        if(J==1){
-          fit <- glm(y~c(Xitilde[,i]),family = "binomial")
-          beta.var[,,i] <- ipars[["phi"]][,1]%*%solve(t(Xitilde[,i])%*%Xitilde[,i])%*%t(ipars[["phi"]][,1])*vary
-        }else{
-          fit <- glm(y~Xitilde[,,i],family = "binomial")
-          beta.var[,,i] <- ipars[["phi"]][,1:J]%*%solve(t(Xitilde[,,i])%*%Xitilde[,,i])%*%t(ipars[["phi"]][,1:J])*vary
+      }else if(!cond.y){
+        # Estimate X's from imputed scores
+        Xall <- array(NA,c(N,M,nimps))
+        for(i in 1:nimps){
+          Xall[,,i] <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(scores_imp[,,i]))
         }
-        bhat[,i] <- coef(fit)[-1]
-        alpha[i] <- log(muy) - log(1 - muy) - sum(((t(ipars[["phi"]][,1:J])%*%(ipars[["mu1"]] - ipars[["mu0"]])/M)^2)/(ipars[["lam"]][1:J]^2))/2
-        if(J==1){
-          beta.hat.mat[,i] <- ipars[["phi"]][,1]*bhat[,i]
-        }else{
+        Xhat <- apply(Xall,c(1,2),FUN = mean)
+
+        # Estimate Beta
+        bhat <- matrix(NA,nrow = J,ncol = k)
+        beta.hat.mat <- matrix(NA,nrow = M,ncol = k)
+        beta.var <- array(NA,dim = c(M,M,k))
+        alpha <- numeric(k)
+        for(i in 1:k){
+          fit <- glm(y~scores_imp[,,i],family = "binomial")
+          bhat[,i] <- coef(fit)[-1]
           beta.hat.mat[,i] <- ipars[["phi"]][,1:J]%*%bhat[,i]
+          beta.var[,,i] <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
+          alpha[i] <- coef(fit)[1] - sum((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat[,i])/M
         }
       }
+
       beta.hat <- rowMeans(beta.hat.mat)
       alpha.hat <- mean(alpha)
 
