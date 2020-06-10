@@ -382,11 +382,11 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         Xhat <- apply(Xall,c(1,2),FUN = mean)
 
         # Estimate Beta
-        bhat <- matrix(NA,nrow = J,ncol = k)
-        beta.hat.mat <- matrix(NA,nrow = M,ncol = k)
-        beta.var <- array(NA,dim = c(M,M,k))
-        alpha <- numeric(k)
-        for(i in 1:k){
+        bhat <- matrix(NA,nrow = J,ncol = nimps)
+        beta.hat.mat <- matrix(NA,nrow = M,ncol = nimps)
+        beta.var <- array(NA,dim = c(M,M,nimps))
+        alpha <- numeric(nimps)
+        for(i in 1:nimps){
           fit <- glm(y~scores_imp[,,i],family = "binomial")
           bhat[,i] <- coef(fit)[-1]
           beta.hat.mat[,i] <- ipars[["phi"]][,1:J]%*%bhat[,i]
