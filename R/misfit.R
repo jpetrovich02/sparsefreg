@@ -410,18 +410,44 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       pvnorm <- ifelse(pvnorm <0 ,0,pvnorm)
 
     }else if(impute_type=="Mean"){
+
       Xiest <- scores_all[,1:J]
 
-      # Estimate X's from imputed scores
-      Xhat <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xiest))
+      if(cond.y){
+        # Estimate X's from imputed scores
+        Xhat <- Xiest%*%t(ipars[["phi"]][,1:J])
+        for(i in 1:N){
+          mu_y <- ifelse(y[i]==0,ipars[["mu0"]],ipars[["mu1"]])
+          Xhat[i,] <- Xhat[i,] + mu_y
+        }
 
-      # Beta estimate
-      fit <- glm(y~Xiest,family = "binomial")
-      bhat <- coef(fit)[-1]
-      beta.hat <- ipars[["phi"]][,1:J]%*%bhat
-      beta.var <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
-      alpha.hat <- coef(fit)[1] - mean((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat)
-      Cbeta <- beta.var
+        # Add back means
+        Xitilde <- Xiest
+        mean0j <- colMeans(ipars[["mu0"]]*ipars[["phi"]][,1:J])
+        mean1j <- colMeans(ipars[["mu1"]]*ipars[["phi"]][,1:J])
+        Xitilde[which(y==0),] <- apply(Xitilde[which(y==0),],1,function(x) x + mean0j)
+        Xitilde[which(y==1),] <- apply(Xitilde[which(y==1),],1,function(x) x + mean1j)
+
+        # Estimate Beta
+        fit <- glm(y ~ Xitilde,family = "binomial")
+        bhat <- coef(fit)[-1]
+        beta.var <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
+        beta.hat <- ipars[["phi"]][,1:J]%*%bhat
+        alpha.hat <- coef(fit)[1] - mean((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat)
+        Cbeta <- beta.var
+
+      }else if(!cond.y){
+        # Estimate X's from imputed scores
+        Xhat <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xiest))
+
+        # Beta estimate
+        fit <- glm(y~Xiest,family = "binomial")
+        bhat <- coef(fit)[-1]
+        beta.hat <- ipars[["phi"]][,1:J]%*%bhat
+        beta.var <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
+        alpha.hat <- coef(fit)[1] - mean((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat)
+        Cbeta <- beta.var
+      }
 
       # p-value
       ev <- eigen(Cbeta)$values
