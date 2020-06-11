@@ -359,10 +359,10 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         for(i in 1:nimps){
           if(J==1){
             fit <- glm(y~c(Xitilde[,i]),family = "binomial")
-            beta.var[,,i] <- ipars[["phi"]][,1]%*%solve(t(Xitilde[,i])%*%Xitilde[,i])%*%t(ipars[["phi"]][,1])*vary
+            beta.var[,,i] <- ipars[["phi"]][,1]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1])
           }else{
             fit <- glm(y~Xitilde[,,i],family = "binomial")
-            beta.var[,,i] <- ipars[["phi"]][,1:J]%*%solve(t(Xitilde[,,i])%*%Xitilde[,,i])%*%t(ipars[["phi"]][,1:J])*vary
+            beta.var[,,i] <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
           }
           bhat[,i] <- coef(fit)[-1]
           alpha[i] <- log(muy) - log(1 - muy) - sum(((t(ipars[["phi"]][,1:J])%*%(ipars[["mu1"]] - ipars[["mu0"]])/M)^2)/(ipars[["lam"]][1:J]^2))/2
