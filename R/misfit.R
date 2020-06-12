@@ -167,12 +167,13 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
   run.time <- list(est = NULL,imp = NULL)
   M <- length(grid)
   N <- length(unique(dat$subj))
+  y <- (dat %>% group_by(subj) %>% summarise(y = first(y)))$y
 
   if(family=="Gaussian"){
 
     # Estimate imputation parameters
     if(is.null(user_params)){
-      par.est <- param_est_linear(dat,grid,M,cond.y,use_fcr,k = k,nPhi = nPhi,
+      par.est <- param_est_linear(dat,y,grid,M,cond.y,use_fcr,k = k,nPhi = nPhi,
                                   fcr.args = fcr.args,face.args = face.args)
       ipars <- par.est[["params"]]
       run.time[["est"]] <- par.est[["runtime"]]
@@ -283,7 +284,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
     # }
 
   }else if(family=="Binomial"){
-    muy <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(my = mean(y)))[['my']]
+    muy <-  mean(y)
 
     # Estimate imputation parameters
     if(is.null(user_params)){
