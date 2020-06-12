@@ -24,14 +24,16 @@
 #'@export
 
 
-param_est_linear <- function(dat,workGrid,M,cond.y=TRUE,use_fcr = TRUE,fcr.args = list(use_bam = T,niter = 1),
+param_est_linear <- function(dat,y,workGrid,M,cond.y=TRUE,use_fcr = TRUE,fcr.args = list(use_bam = T,niter = 1),
                              k = -1,nPhi = NULL,face.args=list(knots = 12, lower = -3, pve = 0.95),
                              FPCA.args = NULL){
   N <- length(unique(dat[,"subj"]))
   start_time <- proc.time()
   if(cond.y){
-    muy <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(mean(y)))[[1]]
-    var_y <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(var(y)))[[1]]
+    # muy <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(mean(y)))[[1]]
+    # var_y <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(var(y)))[[1]]
+    muy <- mean(y)
+    var_y <- var(y)
 
     if(is.null(nPhi)){
       if(k== - 1){
