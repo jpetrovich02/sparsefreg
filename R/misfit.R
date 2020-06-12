@@ -283,9 +283,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
     # }
 
   }else if(family=="Binomial"){
-    sum_y <- dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(vy = var(y),my = mean(y))
-    muy <- sum_y[['my']]
-    vary <- sum_y[['vy']]
+    muy <- (dat %>% group_by(subj) %>% summarise(y = first(y)) %>% summarise(my = mean(y)))[['my']]
 
     # Estimate imputation parameters
     if(is.null(user_params)){
