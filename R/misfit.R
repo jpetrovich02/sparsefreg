@@ -241,12 +241,6 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       var.t <- var.w + ((nimps+1)/nimps)*var.b
       Cbeta <- list(var.w = var.w,var.b = var.b,var.t = var.t)
 
-      # p-value
-      ev <- eigen(var.t)$values
-      Tb <- sum(beta.hat^2)
-      pvnorm <- imhof(Tb,ev[ev > 0])[[1]]
-      pvnorm <- ifelse(pvnorm < 0 ,0,pvnorm)
-
     }else if(impute_type=="Mean"){
       Xiest <- scores_all[,1:J]
 
@@ -272,11 +266,6 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       beta.var <- ipars[["phi"]][,1:J]%*%solve(t(Xiest)%*%Xiest)%*%t(ipars[["phi"]][,1:J])*veps
       Cbeta <- beta.var
 
-      # p-value
-      ev <- eigen(Cbeta)$values
-      Tb <- sum(beta.hat^2)
-      pvnorm <- imhof(Tb,ev[ev > 0])[[1]]
-      pvnorm <- ifelse(pvnorm < 0 ,0,pvnorm)
     }
 
     # if(!ret_allxi){
@@ -402,12 +391,6 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       var.t <- var.w + ((nimps+1)/nimps)*var.b
       Cbeta <- list(var.w = var.w,var.b = var.b,var.t = var.t)
 
-      # P-value
-      ev <- eigen(var.t)$values
-      Tb <- sum(beta.hat^2)
-      pvnorm <- imhof(Tb,ev[ev > 0])[[1]]
-      pvnorm <- ifelse(pvnorm <0 ,0,pvnorm)
-
     }else if(impute_type=="Mean"){
 
       Xiest <- scores_all[,1:J]
@@ -448,11 +431,6 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         Cbeta <- beta.var
       }
 
-      # p-value
-      ev <- eigen(Cbeta)$values
-      Tb <- sum(beta.hat^2)
-      pvnorm <- imhof(Tb,ev[ev > 0])
-      pvnorm <- ifelse(pvnorm < 0 ,0,pvnorm)
     }
 
     # if(!ret_allxi){
