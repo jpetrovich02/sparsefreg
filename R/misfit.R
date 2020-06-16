@@ -441,7 +441,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
     # }
   }
 
-  out <- list(params = ipars, Xiest = Xiest, Xhat = Xhat, pvnorm = pvnorm,
+  out <- list(params = ipars, Xiest = Xiest, Xhat = Xhat,
               beta.hat = beta.hat, alpha.hat = alpha.hat,Cbeta = Cbeta,
               run.time = run.time)
   return(out)
