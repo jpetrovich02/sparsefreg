@@ -2,7 +2,6 @@
 #------- Example Using MISFIT for a Logistic SoF Model -------------#
 #####################################################################
 
-
 set.seed(123)
 
 library(MASS)
@@ -13,7 +12,7 @@ library(sparsefreg)
 
 ## Data generation
 M <- 100 # grid size
-N <- 200
+N <- 800
 m <-2
 J <- 2
 nimps <- 10
@@ -91,20 +90,87 @@ meu <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = NULL,
               cond.y = F,
               impute_type = "Mean")
 
-plot(grid,beta,type = 'l')
-lines(grid,meu$beta.hat,lty = 2)
+########################################################
+## Multiple Imputation, Unconditional on the response ##
+########################################################
+muu <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = meu$params,
+              family = "Binomial",
+              cond.y = F,
+              impute_type = "Multiple")
 
+##################################################
+## Mean Imputation, Conditional on the response ##
+##################################################
+mec <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = NULL,
+              family = "Binomial",
+              cond.y = T,
+              impute_type = "Mean")
+
+######################################################
+## Multiple Imputation, Conditional on the response ##
+######################################################
+muc <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = mec$params,
+              family = "Binomial",
+              cond.y = T,
+              impute_type = "Multiple")
+
+#####################
+## Alpha Estimates ##
+#####################
 alpha
 meu$alpha.hat
+muu$alpha.hat
+mec$alpha.hat
+muc$alpha.hat
 
-par(mfrow = c(1,2))
-matplot(x = grid,t(X_s[which(y==0),]),type = 'l',col = 'black')
-lines(grid,mu0,col = 'black',lwd = 5)
-matplot(x = grid,t(X_s[which(y==1),]),type = 'l',col = 'red',add = T)
-lines(grid,mu1,col = 'red',lwd = 5)
+####################
+## Beta Estimates ##
+####################
+plot(grid,beta,type = 'l')
+lines(grid,meu$beta.hat,col = 'red')
+lines(grid,muu$beta.hat,col = 'orange')
+lines(grid,mec$beta.hat,col = 'green')
+lines(grid,muc$beta.hat,col = 'blue')
 
-matplot(x = grid,t(meu$Xest[which(y==0),]),type = 'l',col = 'black')
-lines(grid,meu$params$mu0,col = 'black',lwd = 5)
-matplot(x = grid,t(meu$Xest[which(y==1),]),type = 'l',col = 'red',add = T)
-lines(grid,mu1,col = 'red',lwd = 5)
+################################
+## Pointwise Confidence Bands ##
+################################
+par(mfrow = c(2,2))
+ylim = c(-8,8)
+plot(grid,meu$beta.hat,type = 'l',ylim = ylim,main = "Mean Unconditional")
+lines(grid,meu$beta.hat + 1.96*sqrt(diag(meu$Cbeta)),lty = 2)
+lines(grid,meu$beta.hat - 1.96*sqrt(diag(meu$Cbeta)),lty = 2)
+plot(grid,muu$beta.hat,type = 'l',ylim = ylim,main = "Multiple Unconditional")
+lines(grid,muu$beta.hat + 1.96*sqrt(diag(muu$Cbeta$var.t)),lty = 2)
+lines(grid,muu$beta.hat - 1.96*sqrt(diag(muu$Cbeta$var.t)),lty = 2)
+plot(grid,mec$beta.hat,type = 'l',ylim = ylim,main = "Mean Conditional")
+lines(grid,mec$beta.hat + 1.96*sqrt(diag(mec$Cbeta)),lty = 2)
+lines(grid,mec$beta.hat - 1.96*sqrt(diag(mec$Cbeta)),lty = 2)
+plot(grid,muc$beta.hat,type = 'l',ylim = ylim,main = "Multiple Conditional")
+lines(grid,muc$beta.hat + 1.96*sqrt(diag(muc$Cbeta$var.t)),lty = 2)
+lines(grid,muc$beta.hat - 1.96*sqrt(diag(muc$Cbeta$var.t)),lty = 2)
+
+############################
+## Estimated X's (curves) ##
+############################
 par(mfrow = c(1,1))
+ylim = c(-5,4)
+matplot(grid,t(X_s[which(y==0),]),
+        type = 'l',col = 'black',ylim = ylim,main = "True")
+matplot(grid,t(X_s[which(y==1),]),type = 'l',col = 'red',add = T)
+
+matplot(grid,t(meu$Xhat[which(y==0),]),
+        type = 'l',col = 'black',ylim = ylim,main = "Mean Unconditional")
+matplot(grid,t(meu$Xhat[which(y==1),]),type = 'l',col = 'red',add = T)
+
+matplot(grid,t(muu$Xhat[which(y==0),]),
+        type = 'l',col = 'black',ylim = ylim,main = "Multiple Unconditional")
+matplot(grid,t(muu$Xhat[which(y==1),]),type = 'l',col = 'red',add = T)
+
+matplot(grid,t(mec$Xhat[which(y==0),]),
+        type = 'l',col = 'black',ylim = ylim,main = "Mean Conditional")
+matplot(grid,t(mec$Xhat[which(y==1),]),type = 'l',col = 'red',add = T)
+
+matplot(grid,t(muc$Xhat[which(y==0),]),
+        type = 'l',col = 'black',ylim = ylim,main = "Multiple Conditional")
+matplot(grid,t(muc$Xhat[which(y==1),]),type = 'l',col = 'red',add = T)
