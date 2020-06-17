@@ -81,8 +81,6 @@ user_params <- list(Cx = Cx, mux = mux, var_delt = var_delt,
 
 # nPhi <- min(c(floor((nrow(obsdf) - 2*as.numeric(ks))/N),J))
 check <- misfit(obsdf,grid = grid,nimps = 10,J = J,family = "Gaussian",user_params = NULL,k = -1)
-check$pvnorm
-check$alpha.hat
 sum((check$beta.hat-beta)^2)/M
 mean(rowMeans((X_s-check$Xhat)^2))
 
