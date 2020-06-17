@@ -16,7 +16,7 @@ M <- 100 # grid size
 N <- 200
 m <-2
 J <- 2
-K <- 10
+nimps <- 10
 w <- 1
 var_delt <- 0.5
 grid <- seq(from=0,to=1,length.out = M)
@@ -80,16 +80,22 @@ T_mat[spt,]<-rbind(grid[ind_obs[spt[1],]],grid[ind_obs[spt[1],]])
 obsdf <- data.frame("X" = c(t(X_mat)),"argvals" = c(t(T_mat)),
                     "y" = rep(y,each = m),"subj" = rep(1:N,each = m))
 
-user_params <- list(Cx = Cx, mu0 = mu0, mu1 = mu1,
-                    var_delt = var_delt, lam = lam, phi = phi)
+# user_params <- list(Cx = Cx, mu0 = mu0, mu1 = mu1,
+#                     var_delt = var_delt, lam = lam, phi = phi)
 
-check <- misfit(obsdf,grid,K = K,J = J,family = "Binomial",k = 20,user_params = user_params,nPhi = 1)
+####################################################
+## Mean Imputation, Unconditional on the response ##
+####################################################
+meu <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = NULL,
+              family = "Binomial",
+              cond.y = F,
+              impute_type = "Mean")
 
 plot(grid,beta,type = 'l')
-lines(grid,check$beta.hat,lty = 2)
+lines(grid,meu$beta.hat,lty = 2)
 
 alpha
-check$alpha.hat
+meu$alpha.hat
 
 par(mfrow = c(1,2))
 matplot(x = grid,t(X_s[which(y==0),]),type = 'l',col = 'black')
@@ -97,8 +103,8 @@ lines(grid,mu0,col = 'black',lwd = 5)
 matplot(x = grid,t(X_s[which(y==1),]),type = 'l',col = 'red',add = T)
 lines(grid,mu1,col = 'red',lwd = 5)
 
-matplot(x = grid,t(check$Xest[which(y==0),]),type = 'l',col = 'black')
-lines(grid,check$params$mu0,col = 'black',lwd = 5)
-matplot(x = grid,t(check$Xest[which(y==1),]),type = 'l',col = 'red',add = T)
+matplot(x = grid,t(meu$Xest[which(y==0),]),type = 'l',col = 'black')
+lines(grid,meu$params$mu0,col = 'black',lwd = 5)
+matplot(x = grid,t(meu$Xest[which(y==1),]),type = 'l',col = 'red',add = T)
 lines(grid,mu1,col = 'red',lwd = 5)
 par(mfrow = c(1,1))
