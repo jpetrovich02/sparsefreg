@@ -2,22 +2,21 @@
 #------- Example Using MISFIT for a Linear SoF Model -------------#
 ###################################################################
 
-
 set.seed(123)
 
+## Load packages
 library(MASS)
 library(fcr)
-# library(tidyverse)
 library(dplyr)
 library(CompQuadForm)
 library(sparsefreg)
 
-## Data generation
+## Data generation/imputation parameters
 M <- 100 # grid size
-N <- 400
-m <- 20
+N <- 200
+m <- 10
 J <- 5
-K <- 10
+nimps <- 10
 w <- 10
 var_eps <- 1
 var_delt <- 0.5
@@ -30,21 +29,24 @@ Cx <- Cx_f(grid,grid)
 lam <- eigen(Cx,symmetric = T)$values/M
 phi <- eigen(Cx,symmetric = T)$vectors*sqrt(M)
 
+## Slope function
 beta <- w*sin(2*pi*grid)
 # beta <- w*(sin(2*pi*grid)+1)
 # beta = -dnorm(grid, mean=.2, sd=.03)+3*dnorm(grid, mean=.5, sd=.04)+dnorm(grid, mean=.75, sd=.05)
-alpha <- 0
 
-X_s <- mvrnorm(N,mux,Cx)
-X_comp <- X_s + rnorm(N*M,sd = sqrt(var_delt))
-Xi <- (X_s-mux)%*%phi/M
-eps <- rnorm(N,0,sd = sqrt(var_eps))
-y <- c(alpha + X_s%*%beta/M + eps)
+## Intercept
+alpha <- 0
 
 Cxy <- Cx%*%beta/M
 muy <- c(t(mux)%*%beta/M)
 var_y <- c(t(beta)%*%Cx%*%beta/(M^2)) + var_eps
 
+## Simulate data
+X_s <- mvrnorm(N,mux,Cx)
+X_comp <- X_s + rnorm(N*M,sd = sqrt(var_delt))
+Xi <- (X_s-mux)%*%phi/M
+eps <- rnorm(N,0,sd = sqrt(var_eps))
+y <- c(alpha + X_s%*%beta/M + eps)
 
 # Sample mi from a discrete uniform distribution s.t. E(x) = (a + b)/2 = m
 a <- 1
@@ -75,55 +77,94 @@ obsdf <- data.frame("X" = unlist(Xl),
                     "y" = rep(y,times = lengths(Xl)),
                     "subj" = rep(1:N,times = lengths(Xl)))
 
-user_params <- list(Cx = Cx, mux = mux, var_delt = var_delt,
-                    muy = muy,lam = lam, phi = phi, Cxy = Cxy,
-                    var_y = var_y)
+# user_params <- list(Cx = Cx, mux = mux, var_delt = var_delt,
+#                     muy = muy,lam = lam, phi = phi, Cxy = Cxy,
+#                     var_y = var_y)
 
-# nPhi <- min(c(floor((nrow(obsdf) - 2*as.numeric(ks))/N),J))
-check <- misfit(obsdf,grid = grid,nimps = 10,J = J,family = "Gaussian",user_params = NULL,k = -1)
-sum((check$beta.hat-beta)^2)/M
-mean(rowMeans((X_s-check$Xhat)^2))
+####################################################
+## Mean Imputation, Unconditional on the response ##
+####################################################
+meu <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = NULL,k = -1,
+              family = "Gaussian",
+              cond.y = F,
+              impute_type = "Mean")
 
+########################################################
+## Multiple Imputation, Unconditional on the response ##
+########################################################
+muu <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = meu$params,
+              family = "Gaussian",
+              cond.y = F,
+              impute_type = "Multiple")
 
-plot(grid,mux,type = 'l')
-lines(grid,check$params$mux,lty = 2)
+##################################################
+## Mean Imputation, Conditional on the response ##
+##################################################
+mec <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = NULL,k = -1,
+              family = "Gaussian",
+              cond.y = T,
+              impute_type = "Mean")
 
-plot(grid,beta,type = 'l')
-lines(grid,check$beta.hat,lty = 2)
+######################################################
+## Multiple Imputation, Conditional on the response ##
+######################################################
+muc <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = mec$params,
+              family = "Gaussian",
+              cond.y = T,
+              impute_type = "Multiple")
 
-check$params$var_delt
-var_delt
-
+#####################
+## Alpha Estimates ##
+#####################
 alpha
-check$alpha.hat
+meu$alpha.hat
+muu$alpha.hat
+mec$alpha.hat
+muc$alpha.hat
 
-mean(mux*beta)
-check$params$muy
+####################
+## Beta Estimates ##
+####################
+plot(grid,beta,type = 'l')
+lines(grid,meu$beta.hat,col = 'red')
+lines(grid,muu$beta.hat,col = 'orange')
+lines(grid,mec$beta.hat,col = 'green')
+lines(grid,muc$beta.hat,col = 'blue')
 
-t(beta)%*%Cx%*%beta/(M^2) - (mean(mux*beta))^2 + var_eps
-check$params$var_y
-
-plot(grid,Cx%*%beta/M,type = 'l')
-lines(grid,check$params$Cxy,lty = 2)
-
-library(plot3D)
-persp3D(grid,grid,Cx)
-persp3D(grid,grid,check$params$Cx)
-
-par(mfrow = c(1,2))
-matplot(t(check$Xhat),type = 'l')
-matplot(t(X_s),type = 'l')
-par(mfrow = c(1,1))
-
-
-{ids <- c(1,10,100,300)
-  # ids <- sample(1:N,size = 4,replace = F)
+################################
+## Pointwise Confidence Bands ##
+################################
 par(mfrow = c(2,2))
-for(i in 1:4){
-  sid <- ids[i]
-  ylim <- range(c(X_s[sid,],Xl[[sid]],check$Xhat[sid,]))
-  plot(grid,X_s[sid,],type = 'l',ylim = ylim,main = paste("Subject Number ",sid))
-  points(Tl[[sid]],Xl[[sid]])
-  lines(grid,check$Xhat[sid,],lty = 2)
-}
-}
+ylim = c(-8,8)
+plot(grid,meu$beta.hat,type = 'l',ylim = ylim,main = "Mean Unconditional")
+lines(grid,meu$beta.hat + 1.96*sqrt(diag(meu$Cbeta)),lty = 2)
+lines(grid,meu$beta.hat - 1.96*sqrt(diag(meu$Cbeta)),lty = 2)
+plot(grid,muu$beta.hat,type = 'l',ylim = ylim,main = "Multiple Unconditional")
+lines(grid,muu$beta.hat + 1.96*sqrt(diag(muu$Cbeta$var.t)),lty = 2)
+lines(grid,muu$beta.hat - 1.96*sqrt(diag(muu$Cbeta$var.t)),lty = 2)
+plot(grid,mec$beta.hat,type = 'l',ylim = ylim,main = "Mean Conditional")
+lines(grid,mec$beta.hat + 1.96*sqrt(diag(mec$Cbeta)),lty = 2)
+lines(grid,mec$beta.hat - 1.96*sqrt(diag(mec$Cbeta)),lty = 2)
+plot(grid,muc$beta.hat,type = 'l',ylim = ylim,main = "Multiple Conditional")
+lines(grid,muc$beta.hat + 1.96*sqrt(diag(muc$Cbeta$var.t)),lty = 2)
+lines(grid,muc$beta.hat - 1.96*sqrt(diag(muc$Cbeta$var.t)),lty = 2)
+
+############################
+## Estimated X's (curves) ##
+############################
+par(mfrow = c(1,1))
+ylim = c(-4,3)
+matplot(grid,t(X_s),type = 'l',ylim = ylim,
+        main = "True")
+
+matplot(grid,t(meu$Xhat),type = 'l',ylim = ylim,
+        main = "Mean Unconditional")
+
+matplot(grid,t(muu$Xhat),type = 'l',ylim = ylim,
+        main = "Multiple Unconditional")
+
+matplot(grid,t(mec$Xhat),type = 'l',ylim = ylim,
+        main = "Mean Conditional")
+
+matplot(grid,t(muc$Xhat),type = 'l',ylim = ylim,
+        main = "Multiple Conditional")
