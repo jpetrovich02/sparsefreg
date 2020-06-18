@@ -3,7 +3,6 @@
 \docType{package}
 \name{sparsefreg}
 \alias{sparsefreg}
-\alias{sparsefreg-package}
 \title{sparsefreg: A package for performing scalar-on-function regression with sparsely-observed functional covariates}
 \description{
 The sparsefreg package implements the MISFIT (Multiple Imputation for Sparsely-sampled
