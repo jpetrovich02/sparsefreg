@@ -4,9 +4,19 @@
 \alias{uncond_imp}
 \title{Unconditional Imputation}
 \usage{
-uncond_imp(dat, workGrid, nimps = 10, seed = NULL,
-  impute_type = "Multiple", var_delt = NULL, mux = NULL, Cx = NULL,
-  phi = NULL, lam = NULL, tol = 1e-05)
+uncond_imp(
+  dat,
+  workGrid,
+  nimps = 10,
+  seed = NULL,
+  impute_type = "Multiple",
+  var_delt = NULL,
+  mux = NULL,
+  Cx = NULL,
+  phi = NULL,
+  lam = NULL,
+  tol = 1e-05
+)
 }
 \arguments{
 \item{dat}{An \eqn{n \times 3} data frame (where \eqn{N} is the number of subjects,
@@ -49,6 +59,9 @@ The variables of \code{dat} should be specified as follows: 'X' specifies the ob
 (no missing values here); 'subj' should contain unique numeric identifiers for each subject,
 and 'argvals' should indicate the time point at which each observation was made (note that these values should
 be a subset of \code{workGrid}).
+}
+\references{
+
 }
 \author{
 Jusitn Petrovich, \email{jpetrovich02@gmail.com}
