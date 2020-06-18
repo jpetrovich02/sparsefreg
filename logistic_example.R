@@ -4,15 +4,16 @@
 
 set.seed(123)
 
+## Load packages
 library(MASS)
 library(fcr)
 library(dplyr)
 library(CompQuadForm)
 library(sparsefreg)
 
-## Data generation
+## Data generation/imputation parameters
 M <- 100 # grid size
-N <- 800
+N <- 200
 m <-10
 J <- 2
 nimps <- 10
@@ -44,6 +45,8 @@ if(nfpc==1){
   beta <- phi[,1:nfpc]%*%(1/lam[1:nfpc])*w
   # beta <- phi%*%(c(t(mu1)%*%phi/M)/lam)
 }
+
+## Intercept
 alpha <- log(p) - log(1 - p) - sum(((t(phi)%*%(mu1 - mu0)/M)^2)/(lam^2))/2
 
 ## Simulate Data
@@ -80,6 +83,7 @@ T_mat[spt,]<-rbind(grid[ind_obs[spt[1],]],grid[ind_obs[spt[1],]])
 obsdf <- data.frame("X" = c(t(X_mat)),"argvals" = c(t(T_mat)),
                     "y" = rep(y,each = m),"subj" = rep(1:N,each = m))
 
+## To use the true imputation parameters, uncomment below and input these in the user_params argument
 # unconditional_params <- list(Cx = Cx, mux = mux,var_delt = var_delt,
 #                              lam = lam, phi = phi)
 #
