@@ -4,11 +4,23 @@
 \alias{misfit}
 \title{MISFIT (Multiple Imputation for Sparsely-sampled Functions at Irregular Times)}
 \usage{
-misfit(dat, grid, nimps = 10, J, family = "Gaussian", seed = NULL,
-  impute_type = "Multiple", cond.y = T, ret_allxi = F,
-  user_params = NULL, use_fcr = TRUE, fcr.args = list(use_bam = T,
-  niter = 1), k = 15, nPhi = NULL, face.args = list(knots = 12, pve =
-  0.95))
+misfit(
+  dat,
+  grid,
+  nimps = 10,
+  J,
+  family = "Gaussian",
+  seed = NULL,
+  impute_type = "Multiple",
+  cond.y = T,
+  ret_allxi = F,
+  user_params = NULL,
+  use_fcr = TRUE,
+  fcr.args = list(use_bam = T, niter = 1),
+  k = -1,
+  nPhi = NULL,
+  face.args = list(knots = 12, lower = -3, pve = 0.95)
+)
 }
 \arguments{
 \item{dat}{A data frame with \eqn{n} rows (where \eqn{N} is the number of subjects,
@@ -53,6 +65,9 @@ formula, which is constructed within \code{misfit}. See \code{fcr} for more deta
 \item{face.args}{A list of arguments to be passed to the underlying function \code{face.sparse}.
 Currently defaults to setting \code{knots} = 12 and \code{pve} = 0.95. See \code{face.sparse} for
 more details.}
+}
+\value{
+
 }
 \description{
 Performs MISFIT for either linear (\code{family="Gaussian"}) or logistic
