@@ -303,27 +303,6 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       Xiest <- apply(scores_imp,MARGIN = c(1,2),mean)
 
       if(cond.y){
-        # Estimate X's from imputed scores
-        Xall <- array(NA,c(N,M,nimps))
-        if(J==1){
-          for(i in 1:nimps){
-            Xall[,,i] <- scores_imp[,i]%*%t(ipars[["phi"]][,1])
-            for(j in 1:N){
-              mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
-              Xall[j,,i] <- Xall[j,,i] + mu_y
-            }
-          }
-        }else{
-          for(i in 1:nimps){
-            Xall[,,i] <- scores_imp[,,i]%*%t(ipars[["phi"]][,1:J])
-            for(j in 1:N){
-              mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
-              Xall[j,,i] <- Xall[j,,i] + mu_y
-            }
-          }
-        }
-        Xhat <- apply(Xall,c(1,2),mean)
-
         # Add back the means to scores_imp
         Xitilde <- scores_imp
         if(J==1){
@@ -337,6 +316,27 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
           Xitilde[which(y==0),,] <- aperm(apply(Xitilde[which(y==0),,],c(1,3),function(x) x + mean0j),c(2,1,3))
           Xitilde[which(y==1),,] <- aperm(apply(Xitilde[which(y==1),,],c(1,3),function(x) x + mean1j),c(2,1,3))
         }
+
+        # Estimate X's from imputed scores
+        Xall <- array(NA,c(N,M,nimps))
+        if(J==1){
+          for(i in 1:nimps){
+            Xall[,,i] <- Xitilde[,i]%*%t(ipars[["phi"]][,1])
+            for(j in 1:N){
+              mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
+              Xall[j,,i] <- Xall[j,,i] + mu_y
+            }
+          }
+        }else{
+          for(i in 1:nimps){
+            Xall[,,i] <- Xitilde[,,i]%*%t(ipars[["phi"]][,1:J])
+            for(j in 1:N){
+              mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
+              Xall[j,,i] <- Xall[j,,i] + mu_y
+            }
+          }
+        }
+        Xhat <- apply(Xall,c(1,2),mean)
 
         # Estimate Beta
         bhat <- matrix(NA,J,nimps)
@@ -395,19 +395,19 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       Xiest <- scores_all[,1:J]
 
       if(cond.y){
-        # Estimate X's from imputed scores
-        Xhat <- Xiest%*%t(ipars[["phi"]][,1:J])
-        for(i in 1:N){
-          mu_y <- ifelse(y[i]==0,ipars[["mu0"]],ipars[["mu1"]])
-          Xhat[i,] <- Xhat[i,] + mu_y
-        }
-
         # Add back means
         Xitilde <- Xiest
         mean0j <- colMeans(ipars[["mu0"]]*ipars[["phi"]][,1:J])
         mean1j <- colMeans(ipars[["mu1"]]*ipars[["phi"]][,1:J])
         Xitilde[which(y==0),] <- apply(Xitilde[which(y==0),],1,function(x) x + mean0j)
         Xitilde[which(y==1),] <- apply(Xitilde[which(y==1),],1,function(x) x + mean1j)
+
+        # Estimate X's from imputed scores
+        Xhat <- Xitilde%*%t(ipars[["phi"]][,1:J])
+        for(i in 1:N){
+          mu_y <- ifelse(y[i]==0,ipars[["mu0"]],ipars[["mu1"]])
+          Xhat[i,] <- Xhat[i,] + mu_y
+        }
 
         # Estimate Beta
         fit <- glm(y ~ Xitilde,family = "binomial")
