@@ -4,10 +4,20 @@
 \alias{cond_imp_logistic}
 \title{Conditional Imputation for Logistic Scalar-on-Function Regression}
 \usage{
-cond_imp_logistic(dat, workGrid, K = 10, seed = NULL,
-  impute_type = "Multiple", mu0 = NULL, mu1 = NULL,
-  var_delt = NULL, Cx = NULL, phi = NULL, lam = NULL,
-  tol = 1e-05)
+cond_imp_logistic(
+  dat,
+  workGrid,
+  nimps = 10,
+  seed = NULL,
+  impute_type = "Multiple",
+  mu0 = NULL,
+  mu1 = NULL,
+  var_delt = NULL,
+  Cx = NULL,
+  phi = NULL,
+  lam = NULL,
+  tol = 1e-05
+)
 }
 \arguments{
 \item{dat}{An \eqn{n \times 4} data frame (where \eqn{N} is the number of subjects,
@@ -17,7 +27,7 @@ expected to have variables 'X','y','subj', and 'argvals'.}
 \item{workGrid}{A vector of the unique desired grid points on which to evaluate the function.
 The length of this vector will be called \eqn{M}.}
 
-\item{K}{An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".}
+\item{nimps}{An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".}
 
 \item{seed}{A numeric value used to set the seed for reproducibility (useful for multiple imputation).}
 
@@ -40,7 +50,7 @@ or "Multiple".}
 }
 \value{
 Either a \eqn{N\times J} matrix of imputed scores if \code{impute_type} is set to "Mean", or a 3-dimensional array
-of dimension \eqn{N\times J\times K} if \code{impute_type} is set to "Multiple".
+of dimension \eqn{N\times J\times nimps} if \code{impute_type} is set to "Multiple".
 }
 \description{
 Given the imputation parameters, this function imputes the scores using
@@ -54,6 +64,9 @@ The variables of \code{dat} should be specified as follows: 'X' specifies the ob
 (no missing values here); 'y' should be a vector of 1's and 0's such that the values of 'y' are the same for each subject;
 'subj' should contain unique numeric identifiers for each subject, and 'argvals' should indicate the time point at which
 each observation was made (note that these values should be a subset of \code{workGrid}).
+}
+\references{
+
 }
 \author{
 Jusitn Petrovich, \email{jpetrovich02@gmail.com}
