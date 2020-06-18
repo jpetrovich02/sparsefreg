@@ -135,7 +135,7 @@ lines(grid,muc$beta.hat,col = 'blue')
 ## Pointwise Confidence Bands ##
 ################################
 par(mfrow = c(2,2))
-ylim = c(-8,8)
+ylim = c(-10,10)
 plot(grid,meu$beta.hat,type = 'l',ylim = ylim,main = "Mean Unconditional")
 lines(grid,meu$beta.hat + 1.96*sqrt(diag(meu$Cbeta)),lty = 2)
 lines(grid,meu$beta.hat - 1.96*sqrt(diag(meu$Cbeta)),lty = 2)
