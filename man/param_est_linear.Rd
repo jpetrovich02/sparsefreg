@@ -4,9 +4,19 @@
 \alias{param_est_linear}
 \title{Imputation Parameter Estimation for Linear Regression}
 \usage{
-param_est_linear(dat, workGrid, M, cond.y = TRUE, use_fcr = TRUE,
-  fcr.args = list(use_bam = T, niter = 1), k = 15, nPhi = NULL,
-  face.args = list(knots = 12, pve = 0.95), FPCA.args = NULL)
+param_est_linear(
+  dat,
+  y,
+  workGrid,
+  M,
+  cond.y = TRUE,
+  use_fcr = TRUE,
+  fcr.args = list(use_bam = T, niter = 1),
+  k = -1,
+  nPhi = NULL,
+  face.args = list(knots = 12, lower = -3, pve = 0.95),
+  FPCA.args = NULL
+)
 }
 \arguments{
 \item{dat}{A data frame with \eqn{n} rows (where \eqn{N} is the number of subjects,
@@ -28,8 +38,17 @@ passed to \code{fcr} and is only used when \code{cond.y} is TRUE. See \code{fcr}
 
 \item{face.args}{A list of arguments to be passed to the underlying function \code{face.sparse}.}
 }
+\value{
+
+}
 \description{
 Given the data, this function estimates the imputation parameters.
 This function is a wrapper for \code{fcr} if \code{cond.y} is set to TRUE,
 and \code{face.sparse} if \code{cond.y} is set to FALSE.
+}
+\references{
+
+}
+\author{
+
 }
