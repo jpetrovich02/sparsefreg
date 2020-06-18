@@ -13,7 +13,7 @@ library(sparsefreg)
 ## Data generation
 M <- 100 # grid size
 N <- 800
-m <-2
+m <-10
 J <- 2
 nimps <- 10
 w <- 1
@@ -35,6 +35,7 @@ if(nfpc==1){
 }else{
   mu1 <- rowSums(phi[,1:nfpc])*w
 }
+mux <- (mu1 - mu0)*p
 
 ## Slope Function
 if(nfpc==1){
@@ -79,8 +80,11 @@ T_mat[spt,]<-rbind(grid[ind_obs[spt[1],]],grid[ind_obs[spt[1],]])
 obsdf <- data.frame("X" = c(t(X_mat)),"argvals" = c(t(T_mat)),
                     "y" = rep(y,each = m),"subj" = rep(1:N,each = m))
 
-# user_params <- list(Cx = Cx, mu0 = mu0, mu1 = mu1,
-#                     var_delt = var_delt, lam = lam, phi = phi)
+# unconditional_params <- list(Cx = Cx, mux = mux,var_delt = var_delt,
+#                              lam = lam, phi = phi)
+#
+# conditional_params <- list(Cx = Cx, mu0 = mu0, mu1 = mu1, mux = mux,
+#                            var_delt = var_delt, lam = lam, phi = phi)
 
 ####################################################
 ## Mean Imputation, Unconditional on the response ##
