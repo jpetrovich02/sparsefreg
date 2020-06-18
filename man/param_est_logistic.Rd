@@ -4,9 +4,16 @@
 \alias{param_est_logistic}
 \title{Imputation Parameter Estimation for Logistic Regression}
 \usage{
-param_est_logistic(dat, workGrid, cond.y = TRUE, p,
-  fcr.args = list(use_bam = T, niter = 1), k = 15, nPhi = NULL,
-  face.args = list(knots = 12, pve = 0.95))
+param_est_logistic(
+  dat,
+  workGrid,
+  cond.y = TRUE,
+  p,
+  fcr.args = list(use_bam = T, niter = 1),
+  k = 15,
+  nPhi = NULL,
+  face.args = list(knots = 12, pve = 0.95)
+)
 }
 \arguments{
 \item{dat}{A data frame with \eqn{n} rows (where \eqn{N} is the number of subjects,
@@ -30,8 +37,17 @@ passed to \code{fcr} and is only used when \code{cond.y} is TRUE. See \code{fcr}
 
 \item{face.args}{A list of arguments to be passed to the underlying function \code{face.sparse}.}
 }
+\value{
+
+}
 \description{
 Given the data, this function estimates the imputation parameters.
 This function is a wrapper for \code{fcr} if \code{cond.y} is set to TRUE,
 and \code{face.sparse} if \code{cond.y} is set to FALSE.
+}
+\references{
+
+}
+\author{
+
 }
