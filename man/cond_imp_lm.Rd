@@ -4,10 +4,22 @@
 \alias{cond_imp_lm}
 \title{Conditional Imputation for Linear Scalar-on-Funciton Regression}
 \usage{
-cond_imp_lm(dat, workGrid, nimps = 10, seed = NULL,
-  impute_type = "Multiple", muy = NULL, var_y = NULL, Cxy,
-  var_delt = NULL, mux = NULL, Cx = NULL, phi = NULL, lam = NULL,
-  tol = 1e-05)
+cond_imp_lm(
+  dat,
+  workGrid,
+  nimps = 10,
+  seed = NULL,
+  impute_type = "Multiple",
+  muy = NULL,
+  var_y = NULL,
+  Cxy,
+  var_delt = NULL,
+  mux = NULL,
+  Cx = NULL,
+  phi = NULL,
+  lam = NULL,
+  tol = 1e-05
+)
 }
 \arguments{
 \item{dat}{An \eqn{n \times 4} data frame (where \eqn{N} is the number of subjects,
@@ -57,6 +69,9 @@ The variables of \code{dat} should be specified as follows: 'X' specifies the ob
 are the same for each subject; 'subj' should contain unique numeric identifiers for each subject,
 and 'argvals' should indicate the time point at which each observation was made
 (note that these values should be a subset of \code{workGrid}).
+}
+\references{
+
 }
 \author{
 Jusitn Petrovich, \email{jpetrovich02@gmail.com}
