@@ -219,14 +219,14 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
           veps[i] <- sum((fit$residuals)^2)/(N-length(fit$coefficients))
           b.hat.mat[,i] <- coef(fit)[-1]
           beta.hat.mat[,i] <- ipars[["phi"]][,1]*b.hat.mat[,i]
-          alpha[i] <- coef(fit)[1] - mean(ipars[["phi"]][,1]*mux)*b.hat.mat[,i]
+          # alpha[i] <- coef(fit)[1] - mean(ipars[["phi"]][,1]*mux)*b.hat.mat[,i]
           beta.var[,,i] <- ipars[["phi"]][,1:J]%*%as.matrix(vcov(fit)[-1,-1])%*%t(ipars[["phi"]][,1:J])
         }else{
           fit <- lm(y~scores_imp[,,i])
           veps[i] <- sum((fit$residuals)^2)/(N-length(fit$coefficients))
           b.hat.mat[,i] <- coef(fit)[-1]
           beta.hat.mat[,i] <- ipars[["phi"]][,1:J]%*%b.hat.mat[,i]
-          alpha[i] <- coef(fit)[1] - sum((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%b.hat.mat[,i])/M
+          # alpha[i] <- coef(fit)[1] - sum((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%b.hat.mat[,i])/M
           beta.var[,,i] <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
         }
       }
@@ -256,11 +256,11 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       b.hat <- coef(fit)[-1]
       if(J==1){
         beta.hat <- ipars[["phi"]][,1]*b.hat
-        alpha.hat <- coef(fit)[1] - mean(ipars[["phi"]][,1]*ipars[["mux"]])*b.hat
+        # alpha.hat <- coef(fit)[1] - mean(ipars[["phi"]][,1]*ipars[["mux"]])*b.hat
         beta.var <- ipars[["phi"]][,1:J]%*%as.matrix(vcov(fit)[-1,-1])%*%t(ipars[["phi"]][,1:J])
       }else{
         beta.hat <- ipars[["phi"]][,1:J]%*%b.hat
-        alpha.hat <- coef(fit)[1] - sum((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%b.hat)/M
+        # alpha.hat <- coef(fit)[1] - sum((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%b.hat)/M
         beta.var <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
       }
       Cbeta <- beta.var
@@ -300,7 +300,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
     # Obtain regression estimates using imputed scores
     if(impute_type=="Multiple"){
       scores_imp <- scores_all[,1:J,]
-      Xiest <- apply(scores_imp,MARGIN = c(1,2),mean)
+      Xiest <- scores_imp
 
       if(cond.y){
         # Add back the means to scores_imp
@@ -352,7 +352,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
             beta.var[,,i] <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
           }
           bhat[,i] <- coef(fit)[-1]
-          alpha[i] <- log(muy) - log(1 - muy) - sum(((t(ipars[["phi"]][,1:J])%*%(ipars[["mu1"]] - ipars[["mu0"]])/M)^2)/(ipars[["lam"]][1:J]^2))/2
+          # alpha[i] <- log(muy) - log(1 - muy) - sum(((t(ipars[["phi"]][,1:J])%*%(ipars[["mu1"]] - ipars[["mu0"]])/M)^2)/(ipars[["lam"]][1:J]^2))/2
           if(J==1){
             beta.hat.mat[,i] <- ipars[["phi"]][,1]*bhat[,i]
           }else{
@@ -378,7 +378,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
           bhat[,i] <- coef(fit)[-1]
           beta.hat.mat[,i] <- ipars[["phi"]][,1:J]%*%bhat[,i]
           beta.var[,,i] <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
-          alpha[i] <- coef(fit)[1] - sum((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat[,i])/M
+          # alpha[i] <- coef(fit)[1] - sum((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat[,i])/M
         }
       }
 
@@ -414,7 +414,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         bhat <- coef(fit)[-1]
         beta.var <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
         beta.hat <- ipars[["phi"]][,1:J]%*%bhat
-        alpha.hat <- coef(fit)[1] - mean((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat)
+        # alpha.hat <- coef(fit)[1] - mean((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat)
         Cbeta <- beta.var
 
       }else if(!cond.y){
@@ -426,7 +426,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         bhat <- coef(fit)[-1]
         beta.hat <- ipars[["phi"]][,1:J]%*%bhat
         beta.var <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
-        alpha.hat <- coef(fit)[1] - mean((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat)
+        # alpha.hat <- coef(fit)[1] - mean((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat)
         Cbeta <- beta.var
       }
 
@@ -441,7 +441,8 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
   }
 
   out <- list(params = ipars, Xiest = Xiest, Xhat = Xhat,
-              beta.hat = beta.hat, alpha.hat = alpha.hat,Cbeta = Cbeta,
+              beta.hat = beta.hat, #alpha.hat = alpha.hat,
+              Cbeta = Cbeta,
               run.time = run.time)
   return(out)
 }
