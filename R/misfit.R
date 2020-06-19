@@ -276,7 +276,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
 
     # Estimate imputation parameters
     if(is.null(user_params)){
-      par.est <- param_est_logistic(obsdf,grid,cond.y = T,p = muy,fcr.args = fcr.args,
+      par.est <- param_est_logistic(obsdf,grid,cond.y = cond.y,p = muy,fcr.args = fcr.args,
                                   k = k,nPhi = nPhi,face.args = face.args)
       ipars <- par.est[["params"]]
       run.time[["est"]] <- par.est[["runtime"]]
@@ -319,22 +319,26 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
 
         # Estimate X's from imputed scores
         Xall <- array(NA,c(N,M,nimps))
-        if(J==1){
-          for(i in 1:nimps){
-            Xall[,,i] <- Xitilde[,i]%*%t(ipars[["phi"]][,1])
-            for(j in 1:N){
-              mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
-              Xall[j,,i] <- Xall[j,,i] + mu_y
-            }
-          }
-        }else{
-          for(i in 1:nimps){
-            Xall[,,i] <- Xitilde[,,i]%*%t(ipars[["phi"]][,1:J])
-            for(j in 1:N){
-              mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
-              Xall[j,,i] <- Xall[j,,i] + mu_y
-            }
-          }
+        # if(J==1){
+        #   for(i in 1:nimps){
+        #     Xall[,,i] <- Xitilde[,i]%*%t(ipars[["phi"]][,1])
+        #     # for(j in 1:N){
+        #     #   mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
+        #     #   Xall[j,,i] <- Xall[j,,i] + mu_y
+        #     # }
+        #   }
+        # }else{
+        #   for(i in 1:nimps){
+        #     Xall[,,i] <- Xitilde[,,i]%*%t(ipars[["phi"]][,1:J])
+        #     # for(j in 1:N){
+        #     #   mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
+        #     #   Xall[j,,i] <- Xall[j,,i] + mu_y
+        #     # }
+        #   }
+        # }
+        for(i in 1:nimps){
+          # Xall[,,i] <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xitilde[,,i]))
+          Xall[,,i] <- Xitilde[,,i]%*%t(ipars[["phi"]][,1:J])
         }
         Xhat <- apply(Xall,c(1,2),mean)
 
@@ -404,10 +408,11 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
 
         # Estimate X's from imputed scores
         Xhat <- Xitilde%*%t(ipars[["phi"]][,1:J])
-        for(i in 1:N){
-          mu_y <- ifelse(y[i]==0,ipars[["mu0"]],ipars[["mu1"]])
-          Xhat[i,] <- Xhat[i,] + mu_y
-        }
+        # Xhat <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xitilde))
+        # for(i in 1:N){
+        #   mu_y <- ifelse(y[i]==0,ipars[["mu0"]],ipars[["mu1"]])
+        #   Xhat[i,] <- Xhat[i,] + mu_y
+        # }
 
         # Estimate Beta
         fit <- glm(y ~ Xitilde,family = "binomial")
