@@ -219,7 +219,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
           veps[i] <- sum((fit$residuals)^2)/(N-length(fit$coefficients))
           b.hat.mat[,i] <- coef(fit)[-1]
           beta.hat.mat[,i] <- ipars[["phi"]][,1]*b.hat.mat[,i]
-          # alpha[i] <- coef(fit)[1] - mean(ipars[["phi"]][,1]*mux)*b.hat.mat[,i]
+          # alpha[i] <- coef(fit)[1] - mean(ipars[["phi"]][,1]*ipars[["mux"]])*b.hat.mat[,i]
           beta.var[,,i] <- ipars[["phi"]][,1:J]%*%as.matrix(vcov(fit)[-1,-1])%*%t(ipars[["phi"]][,1:J])
         }else{
           fit <- lm(y~scores_imp[,,i])
@@ -350,17 +350,16 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         for(i in 1:nimps){
           if(J==1){
             fit <- glm(y~c(Xitilde[,i]),family = "binomial")
+            bhat[,i] <- coef(fit)[-1]
+            beta.hat.mat[,i] <- ipars[["phi"]][,1]*bhat[,i]
             beta.var[,,i] <- ipars[["phi"]][,1]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1])
+            # alpha[i] <- coef(fit)[1] - mean(ipars[["phi"]][,1]*ipars[["mux"]])*bhat[,i]
           }else{
             fit <- glm(y~Xitilde[,,i],family = "binomial")
-            beta.var[,,i] <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
-          }
-          bhat[,i] <- coef(fit)[-1]
-          # alpha[i] <- log(muy) - log(1 - muy) - sum(((t(ipars[["phi"]][,1:J])%*%(ipars[["mu1"]] - ipars[["mu0"]])/M)^2)/(ipars[["lam"]][1:J]^2))/2
-          if(J==1){
-            beta.hat.mat[,i] <- ipars[["phi"]][,1]*bhat[,i]
-          }else{
+            bhat[,i] <- coef(fit)[-1]
             beta.hat.mat[,i] <- ipars[["phi"]][,1:J]%*%bhat[,i]
+            beta.var[,,i] <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
+            # alpha[i] <- coef(fit)[1] - sum((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat[,i])/M
           }
         }
 
