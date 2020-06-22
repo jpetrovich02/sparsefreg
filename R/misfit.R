@@ -198,14 +198,20 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
     # Obtain regression estimates using imputed scores
     if(impute_type=="Multiple"){
       scores_imp <- scores_all[,1:J,]
-      Xiest <- apply(scores_imp,MARGIN = c(1,2),mean)
+      Xiest <- scores_imp
 
       # Estimate X's from imputed scores
-      Xhat <- if(J==1){
-        sweep(matrix(rep(ipars[["phi"]][,1],N),N,M,byrow = T)*c(Xiest),2,ipars[["mux"]],FUN = "+")
-      }else{
-        t(c(ipars[["mux"]]) + ipars[["phi"]][,1:J]%*%t(Xiest))
+      Xall <- array(NA,c(N,M,nimps))
+      for(i in 1:nimps){
+        # Xall[,,i] <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xitilde[,,i]))
+        if(J==1){
+          Xall[,,i] <- sweep(Xiest[,i]%*%t(ipars[["phi"]][,1]),
+                             MARGIN = 2,STATS = ipars[["mux"]],FUN = "+")
+        }else{
+          Xall[,,i] <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xiest[,,i]))
+        }
       }
+      Xhat <- apply(Xall,c(1,2),mean)
 
       # Estimate Beta
       b.hat.mat <- matrix(NA,nrow = J,ncol = nimps)
@@ -339,7 +345,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         for(i in 1:nimps){
           # Xall[,,i] <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xitilde[,,i]))
           if(J==1){
-            Xall[,,i] <- Xitilde[,i]*ipars[["phi"]][,1]
+            Xall[,,i] <- Xitilde[,i]%*%t(ipars[["phi"]][,1])
           }else{
             Xall[,,i] <- Xitilde[,,i]%*%t(ipars[["phi"]][,1:J])
           }
@@ -372,7 +378,9 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         Xall <- array(NA,c(N,M,nimps))
         for(i in 1:nimps){
           if(J==1){
-            Xall[,,i] <- t(ipars[["mux"]] + scores_imp[,i]*ipars[["phi"]][,1])
+            Xall[,,i] <- t(ipars[["mux"]] +ipars[["phi"]][,1]%*%t(scores_imp[,i]))
+            # Xall[,,i] <- sweep(scores_imp[,i]%*%t(ipars[["phi"]][,1]),
+            #                    MARGIN = 2,STATS = ipars[["mux"]],FUN = "+")
           }else{
             Xall[,,i] <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(scores_imp[,,i]))
           }
