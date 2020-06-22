@@ -211,7 +211,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       b.hat.mat <- matrix(NA,nrow = J,ncol = nimps)
       beta.hat.mat <- matrix(NA,nrow = M,ncol = nimps)
       beta.var <- array(NA,dim = c(M,M,nimps))
-      alpha <- numeric(nimps)
+      # alpha <- numeric(nimps)
       veps <- numeric(nimps)
       for(i in 1:nimps){
         if(J==1){
@@ -232,7 +232,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       }
       ipars[["var_eps"]] <- mean(veps)
       beta.hat <- rowMeans(beta.hat.mat)
-      alpha.hat <- mean(alpha)
+      # alpha.hat <- mean(alpha)
 
       var.w <- apply(beta.var,c(1,2),mean)
       var.b <- (beta.hat.mat - beta.hat)%*%t(beta.hat.mat - beta.hat)/(nimps-1)
@@ -346,7 +346,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         bhat <- matrix(NA,J,nimps)
         beta.hat.mat <- matrix(NA,M,nimps)
         beta.var <- array(NA,dim = c(M,M,nimps))
-        alpha <- numeric(nimps)
+        # alpha <- numeric(nimps)
         for(i in 1:nimps){
           if(J==1){
             fit <- glm(y~c(Xitilde[,i]),family = "binomial")
@@ -375,7 +375,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         bhat <- matrix(NA,nrow = J,ncol = nimps)
         beta.hat.mat <- matrix(NA,nrow = M,ncol = nimps)
         beta.var <- array(NA,dim = c(M,M,nimps))
-        alpha <- numeric(nimps)
+        # alpha <- numeric(nimps)
         for(i in 1:nimps){
           fit <- glm(y~scores_imp[,,i],family = "binomial")
           bhat[,i] <- coef(fit)[-1]
@@ -386,7 +386,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       }
 
       beta.hat <- rowMeans(beta.hat.mat)
-      alpha.hat <- mean(alpha)
+      # alpha.hat <- mean(alpha)
 
       var.w <- apply(beta.var,c(1,2),mean)
       var.b <- (beta.hat.mat - beta.hat)%*%t(beta.hat.mat - beta.hat)/(nimps-1)
