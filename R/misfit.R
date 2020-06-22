@@ -338,7 +338,11 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         # }
         for(i in 1:nimps){
           # Xall[,,i] <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xitilde[,,i]))
-          Xall[,,i] <- Xitilde[,,i]%*%t(ipars[["phi"]][,1:J])
+          if(J==1){
+            Xall[,,i] <- Xitilde[,i]*ipars[["phi"]][,1]
+          }else{
+            Xall[,,i] <- Xitilde[,,i]%*%t(ipars[["phi"]][,1:J])
+          }
         }
         Xhat <- apply(Xall,c(1,2),mean)
 
@@ -352,14 +356,14 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
             fit <- glm(y~c(Xitilde[,i]),family = "binomial")
             bhat[,i] <- coef(fit)[-1]
             beta.hat.mat[,i] <- ipars[["phi"]][,1]*bhat[,i]
-            beta.var[,,i] <- ipars[["phi"]][,1]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1])
-            # alpha[i] <- coef(fit)[1] - mean(ipars[["phi"]][,1]*ipars[["mux"]])*bhat[,i]
+            beta.var[,,i] <- ipars[["phi"]][,1]%*%as.matrix(vcov(fit)[-1,-1])%*%t(ipars[["phi"]][,1])
+            # alpha[i] <-
           }else{
             fit <- glm(y~Xitilde[,,i],family = "binomial")
             bhat[,i] <- coef(fit)[-1]
             beta.hat.mat[,i] <- ipars[["phi"]][,1:J]%*%bhat[,i]
             beta.var[,,i] <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
-            # alpha[i] <- coef(fit)[1] - sum((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat[,i])/M
+            # alpha[i] <-
           }
         }
 
@@ -367,7 +371,11 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         # Estimate X's from imputed scores
         Xall <- array(NA,c(N,M,nimps))
         for(i in 1:nimps){
-          Xall[,,i] <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(scores_imp[,,i]))
+          if(J==1){
+            Xall[,,i] <- t(ipars[["mux"]] + scores_imp[,i]*ipars[["phi"]][,1])
+          }else{
+            Xall[,,i] <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(scores_imp[,,i]))
+          }
         }
         Xhat <- apply(Xall,c(1,2),FUN = mean)
 
@@ -377,11 +385,19 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         beta.var <- array(NA,dim = c(M,M,nimps))
         # alpha <- numeric(nimps)
         for(i in 1:nimps){
-          fit <- glm(y~scores_imp[,,i],family = "binomial")
-          bhat[,i] <- coef(fit)[-1]
-          beta.hat.mat[,i] <- ipars[["phi"]][,1:J]%*%bhat[,i]
-          beta.var[,,i] <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
-          # alpha[i] <- coef(fit)[1] - sum((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat[,i])/M
+          if(J==1){
+            fit <- glm(y ~ scores_imp[,i],family = "binomial")
+            bhat[,i] <- coef(fit)[-1]
+            beta.hat.mat[,i] <- ipars[["phi"]][,1]*bhat[,i]
+            beta.var[,,i] <- ipars[["phi"]][,1]%*%as.matrix(vcov(fit)[-1,-1])%*%t(ipars[["phi"]][,1])
+            # alpha[i] <-
+          }else{
+            fit <- glm(y ~ scores_imp[,,i],family = "binomial")
+            bhat[,i] <- coef(fit)[-1]
+            beta.hat.mat[,i] <- ipars[["phi"]][,1:J]%*%bhat[,i]
+            beta.var[,,i] <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
+            # alpha[i] <-
+          }
         }
       }
 
@@ -400,10 +416,17 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
       if(cond.y){
         # Add back means
         Xitilde <- Xiest
-        mean0j <- colMeans(ipars[["mu0"]]*ipars[["phi"]][,1:J])
-        mean1j <- colMeans(ipars[["mu1"]]*ipars[["phi"]][,1:J])
-        Xitilde[which(y==0),] <- apply(Xitilde[which(y==0),],1,function(x) x + mean0j)
-        Xitilde[which(y==1),] <- apply(Xitilde[which(y==1),],1,function(x) x + mean1j)
+        if(J==1){
+          mean0j <- mean(ipars[["mu0"]]*ipars[["phi"]][,1])
+          mean1j <- mean(ipars[["mu1"]]*ipars[["phi"]][,1])
+          Xitilde[which(y==0)] <- Xitilde[which(y==0)] + mean0j
+          Xitilde[which(y==1)] <- Xitilde[which(y==1)] + mean1j
+        }else{
+          mean0j <- colMeans(ipars[["mu0"]]*ipars[["phi"]][,1:J])
+          mean1j <- colMeans(ipars[["mu1"]]*ipars[["phi"]][,1:J])
+          Xitilde[which(y==0),] <- apply(Xitilde[which(y==0),],1,function(x) x + mean0j)
+          Xitilde[which(y==1),] <- apply(Xitilde[which(y==1),],1,function(x) x + mean1j)
+        }
 
         # Estimate X's from imputed scores
         Xhat <- Xitilde%*%t(ipars[["phi"]][,1:J])
@@ -416,9 +439,16 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         # Estimate Beta
         fit <- glm(y ~ Xitilde,family = "binomial")
         bhat <- coef(fit)[-1]
-        beta.var <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
-        beta.hat <- ipars[["phi"]][,1:J]%*%bhat
-        # alpha.hat <- coef(fit)[1] - mean((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat)
+        if(J==1){
+          beta.var <- ipars[["phi"]][,1]%*%as.matrix(vcov(fit)[-1,-1])%*%t(ipars[["phi"]][,1])
+          beta.hat <- ipars[["phi"]][,1]*bhat
+          # alpha.hat <-
+        }else{
+          beta.var <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
+          beta.hat <- ipars[["phi"]][,1:J]%*%bhat
+          # alpha.hat <-
+        }
+
         Cbeta <- beta.var
 
       }else if(!cond.y){
@@ -428,9 +458,15 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         # Beta estimate
         fit <- glm(y~Xiest,family = "binomial")
         bhat <- coef(fit)[-1]
-        beta.hat <- ipars[["phi"]][,1:J]%*%bhat
-        beta.var <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
-        # alpha.hat <- coef(fit)[1] - mean((ipars[["phi"]][,1:J]*ipars[["mux"]])%*%bhat)
+        if(J==1){
+          beta.hat <- ipars[["phi"]][,1]*bhat
+          beta.var <- ipars[["phi"]][,1]%*%as.matrix(vcov(fit)[-1,-1])%*%t(ipars[["phi"]][,1])
+          # alpha.hat <-
+        }else{
+          beta.hat <- ipars[["phi"]][,1:J]%*%bhat
+          beta.var <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
+          # alpha.hat <-
+        }
         Cbeta <- beta.var
       }
 
