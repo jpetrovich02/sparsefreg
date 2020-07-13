@@ -25,7 +25,7 @@
 #'@export
 
 param_est_logistic <- function(dat,workGrid,cond.y=TRUE,p,fcr.args = list(use_bam = T,niter = 1),
-                               k = 15,nPhi = NULL,face.args=list(knots = 12, pve = 0.95)){
+                               k = 15,face.args=list(knots = 12, pve = 0.95)){#,nPhi = NULL){
   N <- length(unique(dat[,"subj"]))
   if(cond.y){
     # nPhi <- min(c(floor((nrow(dat) - 2*k)/N)),J)
@@ -33,17 +33,17 @@ param_est_logistic <- function(dat,workGrid,cond.y=TRUE,p,fcr.args = list(use_ba
     # if(!is.null(nPhi)){fcr.args['nPhi'] <- deparse(nPhi)}
     # rhs <- paste("s(argvals, k =", ks,", bs = \"ps\") + s(argvals, by = y, k =", ks,", bs = \"ps\")")
     # model <- reformulate(response = "X",termlabels = rhs)
-    if(is.null(nPhi)){
-      if(k== - 1){
-        nPhi <- floor((nrow(dat) - 2*10)/N)
-      }else{
-        nPhi <- floor((nrow(dat) - 2*k)/N) # this is based on using the same basis for both smooths
-      }
-    }
+    # if(is.null(nPhi)){
+    #   if(k== - 1){
+    #     nPhi <- floor((nrow(dat) - 2*10)/N)
+    #   }else{
+    #     nPhi <- floor((nrow(dat) - 2*k)/N) # this is based on using the same basis for both smooths
+    #   }
+    # }
     rhs <- paste("~ ", "s(argvals, k =", k,", bs = \"ps\") + s(argvals, by = y, k =", k,", bs = \"ps\")")
     model <- update.formula(rhs, "X ~ .")
     fit <- do.call("fcr",c(list(formula = model, data = dat, subj = "subj", argvals = "argvals",
-                                face.args = face.args, argvals.new = workGrid, nPhi = nPhi),
+                                face.args = face.args, argvals.new = workGrid),#, nPhi = nPhi),
                            fcr.args))
     Cb <- fit$face.object$Chat.new
     ci <- match(workGrid,fit$face.object$argvals.new)
