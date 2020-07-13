@@ -24,8 +24,10 @@
 #'@export
 
 
-param_est_linear <- function(dat,y,workGrid,M,cond.y=TRUE,use_fcr = TRUE,fcr.args = list(use_bam = T,niter = 1),
-                             k = -1,nPhi = NULL,face.args=list(knots = 12, lower = -3, pve = 0.95),
+param_est_linear <- function(dat,y,workGrid,M,cond.y=TRUE,use_fcr = TRUE,
+                             fcr.args = list(use_bam = T,niter = 1),
+                             k = -1,#nPhi = NULL,
+                             face.args=list(knots = 12, lower = -3, pve = 0.95),
                              FPCA.args = NULL){
   N <- length(unique(dat[,"subj"]))
   start_time <- proc.time()
@@ -35,16 +37,16 @@ param_est_linear <- function(dat,y,workGrid,M,cond.y=TRUE,use_fcr = TRUE,fcr.arg
     muy <- mean(y)
     var_y <- var(y)
 
-    if(is.null(nPhi)){
-      if(k== - 1){
-        nPhi <- floor((nrow(dat) - 2*10)/N)
-      }else{
-        nPhi <- floor((nrow(dat) - 2*k)/N) # this is based on using the same basis for both smooths
-      }
-    }
+    # if(is.null(nPhi)){
+    #   if(k== - 1){
+    #     nPhi <- floor((nrow(dat) - 2*10)/N)
+    #   }else{
+    #     nPhi <- floor((nrow(dat) - 2*k)/N) # this is based on using the same basis for both smooths
+    #   }
+    # }
 
     if(use_fcr){
-      params <- param_est_fcr(dat,workGrid,muy,var_y,fcr.args,k,nPhi,face.args)
+      params <- param_est_fcr(dat,workGrid,muy,var_y,fcr.args,k,face.args)#,nPhi)
     }else{
       params <- param_est_pace(dat,M,cond.y,muy,FPCA.args)
     }
