@@ -148,7 +148,7 @@
 
 misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type = "Multiple",
                    cond.y = T,ret_allxi = F,user_params = NULL,use_fcr = TRUE,
-                   fcr.args = list(use_bam = T,niter = 1),k = -1, nPhi = NULL,
+                   fcr.args = list(use_bam = T,niter = 1),k = -1, #nPhi = NULL,
                    face.args=list(knots = 12, lower = -3, pve = 0.95)){
 
   # Check arguments
@@ -173,7 +173,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
 
     # Estimate imputation parameters
     if(is.null(user_params)){
-      par.est <- param_est_linear(dat,y,grid,M,cond.y,use_fcr,k = k,nPhi = nPhi,
+      par.est <- param_est_linear(dat,y,grid,M,cond.y,use_fcr,k = k,#nPhi = nPhi,
                                   fcr.args = fcr.args,face.args = face.args)
       ipars <- par.est[["params"]]
       run.time[["est"]] <- par.est[["runtime"]]
@@ -283,7 +283,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
     # Estimate imputation parameters
     if(is.null(user_params)){
       par.est <- param_est_logistic(obsdf,grid,cond.y = cond.y,p = muy,fcr.args = fcr.args,
-                                  k = k,nPhi = nPhi,face.args = face.args)
+                                  k = k,face.args = face.args)#,nPhi = nPhi)
       ipars <- par.est[["params"]]
       run.time[["est"]] <- par.est[["runtime"]]
     }else{
