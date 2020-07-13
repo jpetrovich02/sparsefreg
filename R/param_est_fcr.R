@@ -4,12 +4,12 @@
 #'@example
 #'@export
 
-param_est_fcr <- function(dat,workGrid,muy,var_y,fcr.args,k,nPhi,face.args){
+param_est_fcr <- function(dat,workGrid,muy,var_y,fcr.args,k,face.args){#,nPhi){
   rhs <- paste("~ ", "s(argvals, k =", k,", bs = \"ps\") + s(argvals, by = y, k =", k,", bs = \"ps\")")
   model <- update.formula(rhs, "X ~ .")
   fit <- do.call("fcr",c(list(formula = model, data = dat, subj = "subj",
                               argvals = "argvals", face.args = face.args,
-                              argvals.new = workGrid,nPhi = nPhi),
+                              argvals.new = workGrid),#,nPhi = nPhi),
                          fcr.args))
   Cb <- fit$face.object$Chat.new
   ci <- match(workGrid,fit$face.object$argvals.new)
