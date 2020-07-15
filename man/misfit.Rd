@@ -18,7 +18,6 @@ misfit(
   use_fcr = TRUE,
   fcr.args = list(use_bam = T, niter = 1),
   k = -1,
-  nPhi = NULL,
   face.args = list(knots = 12, lower = -3, pve = 0.95)
 )
 }

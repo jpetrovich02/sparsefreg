@@ -11,7 +11,6 @@ param_est_logistic(
   p,
   fcr.args = list(use_bam = T, niter = 1),
   k = 15,
-  nPhi = NULL,
   face.args = list(knots = 12, pve = 0.95)
 )
 }
@@ -32,10 +31,10 @@ is FALSE, only 3 columns are needed (no 'y' variable is used).}
 
 \item{k}{Dimension of the smooth terms used in \code{fcr}. Only needs to be specified if \code{cond.y} is TRUE.}
 
+\item{face.args}{A list of arguments to be passed to the underlying function \code{face.sparse}.}
+
 \item{nPhi}{An integer value, indicating the number of random effects to include in the model. This is
 passed to \code{fcr} and is only used when \code{cond.y} is TRUE. See \code{fcr} for more details.}
-
-\item{face.args}{A list of arguments to be passed to the underlying function \code{face.sparse}.}
 }
 \value{
 
