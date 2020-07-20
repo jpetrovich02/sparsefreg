@@ -1,7 +1,7 @@
 #' MISFIT (Multiple Imputation for Sparsely-sampled Functions at Irregular Times)
 #'
-#'Performs MISFIT for either linear (\code{family="Gaussian"}) or logistic
-#'(\code{family="Binomial"}) regression.
+#'Performs MISFIT for either linear (\code{family="gaussian"}) or logistic
+#'(\code{family="binomial"}) regression.
 #'
 #'@param dat A data frame with \eqn{n} rows (where \eqn{N} is the number of subjects,
 #'  each with \eqn{m_i} observations, so that \eqn{\sum_{i=1}^N m_i = n})
@@ -11,8 +11,8 @@
 #'@param grid A length \eqn{M} vector of the unique desired grid points on which to evaluate the function.
 #'@param nimps An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".
 #'@param J An integer specifying the number of FPCs to include in the regression model.
-#'@param family A string indicating the family of the response variable. Currently only "Gaussian"
-#'  (linear regression) and "Binomial" (logistic regression) are supported.
+#'@param family A string indicating the family of the response variable. Currently only "gaussian"
+#'  (linear regression) and "binomial" (logistic regression) are supported.
 #'@param seed An integer used to specify the seed. Optional, but useful for making results reproducible in the
 #'  Multiple Imputation step.
 #'@param impute_type A string indicating whether to use mean or multiple imputation.
@@ -146,7 +146,7 @@
 #'
 #'@export
 
-misfit <- function(dat,grid,nimps=10,J,family="Gaussian",link = NULL,seed=NULL,
+misfit <- function(dat,grid,nimps=10,J,family="gaussian",link = NULL,seed=NULL,
                    impute_type = "Multiple",cond.y = T,ret_allxi = F,user_params = NULL,
                    use_fcr = TRUE,fcr.args = list(use_bam = T,niter = 1),k = -1, #nPhi = NULL,
                    face.args=list(knots = 12, lower = -3, pve = 0.95)){
@@ -160,8 +160,8 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",link = NULL,seed=NULL,
   if(!(impute_type %in% c("Multiple","Mean"))){
     # issue error if impute_type is something other than "Multiple" or "Mean"
   }
-  if(!(family %in% c("Gaussian","Binomial"))){
-    # issue error if family is something other than "Gaussian" or "Binomial"
+  if(!(family %in% c("gaussian","binomial"))){
+    # issue error if family is something other than "gaussian" or "binomial"
   }
   if(!is.null(link)){
     family <- binomial(link = link)
@@ -172,7 +172,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",link = NULL,seed=NULL,
   N <- length(unique(dat$subj))
   y <- (dat %>% group_by(subj) %>% summarise(y = first(y)))$y
 
-  if(family=="Gaussian"){
+  if(family=="gaussian"){
 
     # Estimate imputation parameters
     if(is.null(user_params)){
@@ -280,7 +280,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",link = NULL,seed=NULL,
     #   xi_all <- apply(xi_all,c(1,2),mean)
     # }
 
-  }else if(family=="Binomial"){
+  }else if(family=="binomial"){
     muy <-  mean(y)
 
     # Estimate imputation parameters
