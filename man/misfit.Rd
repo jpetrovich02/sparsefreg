@@ -9,7 +9,8 @@ misfit(
   grid,
   nimps = 10,
   J,
-  family = "Gaussian",
+  family = "gaussian",
+  link = NULL,
   seed = NULL,
   impute_type = "Multiple",
   cond.y = T,
@@ -34,8 +35,8 @@ is FALSE, only 3 columns are needed (no 'y' variable is used).}
 
 \item{J}{An integer specifying the number of FPCs to include in the regression model.}
 
-\item{family}{A string indicating the family of the response variable. Currently only "Gaussian"
-(linear regression) and "Binomial" (logistic regression) are supported.}
+\item{family}{A string indicating the family of the response variable. Currently only "gaussian"
+(linear regression) and "binomial" (logistic regression) are supported.}
 
 \item{seed}{An integer used to specify the seed. Optional, but useful for making results reproducible in the
 Multiple Imputation step.}
@@ -69,8 +70,8 @@ more details.}
 
 }
 \description{
-Performs MISFIT for either linear (\code{family="Gaussian"}) or logistic
-(\code{family="Binomial"}) regression.
+Performs MISFIT for either linear (\code{family="gaussian"}) or logistic
+(\code{family="binomial"}) regression.
 }
 \details{
 When using the \code{user_params} argument, the user must supply a list containing the

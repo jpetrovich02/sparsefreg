@@ -10,7 +10,7 @@ param_est_logistic(
   cond.y = TRUE,
   p,
   fcr.args = list(use_bam = T, niter = 1),
-  k = 15,
+  k = -1,
   face.args = list(knots = 12, pve = 0.95)
 )
 }
