@@ -146,9 +146,9 @@
 #'
 #'@export
 
-misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type = "Multiple",
-                   cond.y = T,ret_allxi = F,user_params = NULL,use_fcr = TRUE,
-                   fcr.args = list(use_bam = T,niter = 1),k = -1, #nPhi = NULL,
+misfit <- function(dat,grid,nimps=10,J,family="Gaussian",link = NULL,seed=NULL,
+                   impute_type = "Multiple",cond.y = T,ret_allxi = F,user_params = NULL,
+                   use_fcr = TRUE,fcr.args = list(use_bam = T,niter = 1),k = -1, #nPhi = NULL,
                    face.args=list(knots = 12, lower = -3, pve = 0.95)){
 
   # Check arguments
@@ -162,6 +162,9 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
   }
   if(!(family %in% c("Gaussian","Binomial"))){
     # issue error if family is something other than "Gaussian" or "Binomial"
+  }
+  if(!is.null(link)){
+    family <- binomial(link = link)
   }
 
   run.time <- list(est = NULL,imp = NULL)
@@ -359,13 +362,13 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         # alpha <- numeric(nimps)
         for(i in 1:nimps){
           if(J==1){
-            fit <- glm(y~c(Xitilde[,i]),family = "binomial")
+            fit <- glm(y~c(Xitilde[,i]),family = family)
             bhat[,i] <- coef(fit)[-1]
             beta.hat.mat[,i] <- ipars[["phi"]][,1]*bhat[,i]
             beta.var[,,i] <- ipars[["phi"]][,1]%*%as.matrix(vcov(fit)[-1,-1])%*%t(ipars[["phi"]][,1])
             # alpha[i] <-
           }else{
-            fit <- glm(y~Xitilde[,,i],family = "binomial")
+            fit <- glm(y~Xitilde[,,i],family = family)
             bhat[,i] <- coef(fit)[-1]
             beta.hat.mat[,i] <- ipars[["phi"]][,1:J]%*%bhat[,i]
             beta.var[,,i] <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
@@ -394,13 +397,13 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         # alpha <- numeric(nimps)
         for(i in 1:nimps){
           if(J==1){
-            fit <- glm(y ~ scores_imp[,i],family = "binomial")
+            fit <- glm(y ~ scores_imp[,i],family = family)
             bhat[,i] <- coef(fit)[-1]
             beta.hat.mat[,i] <- ipars[["phi"]][,1]*bhat[,i]
             beta.var[,,i] <- ipars[["phi"]][,1]%*%as.matrix(vcov(fit)[-1,-1])%*%t(ipars[["phi"]][,1])
             # alpha[i] <-
           }else{
-            fit <- glm(y ~ scores_imp[,,i],family = "binomial")
+            fit <- glm(y ~ scores_imp[,,i],family = family)
             bhat[,i] <- coef(fit)[-1]
             beta.hat.mat[,i] <- ipars[["phi"]][,1:J]%*%bhat[,i]
             beta.var[,,i] <- ipars[["phi"]][,1:J]%*%vcov(fit)[-1,-1]%*%t(ipars[["phi"]][,1:J])
@@ -445,7 +448,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         # }
 
         # Estimate Beta
-        fit <- glm(y ~ Xitilde,family = "binomial")
+        fit <- glm(y ~ Xitilde,family = family)
         bhat <- coef(fit)[-1]
         if(J==1){
           beta.var <- ipars[["phi"]][,1]%*%as.matrix(vcov(fit)[-1,-1])%*%t(ipars[["phi"]][,1])
@@ -464,7 +467,7 @@ misfit <- function(dat,grid,nimps=10,J,family="Gaussian",seed=NULL,impute_type =
         Xhat <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xiest))
 
         # Beta estimate
-        fit <- glm(y~Xiest,family = "binomial")
+        fit <- glm(y~Xiest,family = family)
         bhat <- coef(fit)[-1]
         if(J==1){
           beta.hat <- ipars[["phi"]][,1]*bhat
