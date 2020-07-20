@@ -94,7 +94,7 @@ obsdf <- data.frame("X" = c(t(X_mat)),"argvals" = c(t(T_mat)),
 ## Mean Imputation, Unconditional on the response ##
 ####################################################
 meu <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = NULL,
-              family = "Binomial",
+              family = "binomial",
               cond.y = F,
               impute_type = "Mean")
 
@@ -102,7 +102,7 @@ meu <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = NULL,
 ## Multiple Imputation, Unconditional on the response ##
 ########################################################
 muu <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = meu$params,
-              family = "Binomial",
+              family = "binomial",
               cond.y = F,
               impute_type = "Multiple")
 
@@ -110,7 +110,7 @@ muu <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = meu$params,
 ## Mean Imputation, Conditional on the response ##
 ##################################################
 mec <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = NULL,
-              family = "Binomial",
+              family = "binomial",
               cond.y = T,
               impute_type = "Mean")
 
@@ -118,7 +118,7 @@ mec <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = NULL,
 ## Multiple Imputation, Conditional on the response ##
 ######################################################
 muc <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = mec$params,
-              family = "Binomial",
+              family = "binomial",
               cond.y = T,
               impute_type = "Multiple")
 
