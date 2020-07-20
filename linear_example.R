@@ -85,7 +85,7 @@ obsdf <- data.frame("X" = unlist(Xl),
 ## Mean Imputation, Unconditional on the response ##
 ####################################################
 meu <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = NULL,k = -1,
-              family = "Gaussian",
+              family = "gaussian",
               cond.y = F,
               impute_type = "Mean")
 
@@ -93,7 +93,7 @@ meu <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = NULL,k = -1,
 ## Multiple Imputation, Unconditional on the response ##
 ########################################################
 muu <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = meu$params,
-              family = "Gaussian",
+              family = "gaussian",
               cond.y = F,
               impute_type = "Multiple")
 
@@ -101,7 +101,7 @@ muu <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = meu$params,
 ## Mean Imputation, Conditional on the response ##
 ##################################################
 mec <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = NULL,k = -1,
-              family = "Gaussian",
+              family = "gaussian",
               cond.y = T,
               impute_type = "Mean")
 
@@ -109,7 +109,7 @@ mec <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = NULL,k = -1,
 ## Multiple Imputation, Conditional on the response ##
 ######################################################
 muc <- misfit(obsdf,grid,J = J,nimps = nimps,user_params = mec$params,
-              family = "Gaussian",
+              family = "gaussian",
               cond.y = T,
               impute_type = "Multiple")
 
