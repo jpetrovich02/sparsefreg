@@ -162,8 +162,7 @@ misfit <- function(dat,grid,nimps=10,J,family="gaussian",link = NULL,seed=NULL,
   }
   if(!(family %in% c("gaussian","binomial"))){
     # issue error if family is something other than "gaussian" or "binomial"
-    print(family)
-    stop("'family' not recognized. Must be one of: gaussian or binomial")
+    stop(cat(family,"family not recognized. Must be one of: gaussian or binomial"))
   }
   if(!is.null(link)){
     family <- binomial(link = link)
