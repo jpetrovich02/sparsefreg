@@ -25,7 +25,7 @@
 #'@export
 
 param_est_logistic <- function(dat,workGrid,cond.y=TRUE,p,fcr.args = list(use_bam = T,niter = 1),
-                               k = 15,face.args=list(knots = 12, pve = 0.95)){#,nPhi = NULL){
+                               k = -1,face.args=list(knots = 12, pve = 0.95)){#,nPhi = NULL){
   N <- length(unique(dat[,"subj"]))
   if(cond.y){
     # nPhi <- min(c(floor((nrow(dat) - 2*k)/N)),J)
