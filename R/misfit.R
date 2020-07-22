@@ -438,8 +438,8 @@ misfit <- function(dat,grid,nimps=10,J,family="gaussian",link = NULL,seed=NULL,
         }else{
           mean0j <- colMeans(ipars[["mu0"]]*ipars[["phi"]][,1:J])
           mean1j <- colMeans(ipars[["mu1"]]*ipars[["phi"]][,1:J])
-          Xitilde[which(y==0),] <- apply(Xitilde[which(y==0),],1,function(x) x + mean0j)
-          Xitilde[which(y==1),] <- apply(Xitilde[which(y==1),],1,function(x) x + mean1j)
+          Xitilde[which(y==0),] <- Xitilde[which(y==0),] + matrix(mean0j,sum(y==0),J,byrow = T)
+          Xitilde[which(y==1),] <- Xitilde[which(y==1),] + matrix(mean1j,sum(y==1),J,byrow = T)
         }
 
         # Estimate X's from imputed scores
