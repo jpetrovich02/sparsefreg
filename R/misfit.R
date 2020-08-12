@@ -10,7 +10,10 @@
 #'  is FALSE, only 3 columns are needed (no 'y' variable is used).
 #'@param grid A length \eqn{M} vector of the unique desired grid points on which to evaluate the function.
 #'@param nimps An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".
-#'@param J An integer specifying the number of FPCs to include in the regression model.
+#'@param J An integer specifying the number of FPCs to include in the regression model. By default (NULL),
+#'  J will be chosen as the minimum number of FPCs required to explain a given percentage of variance.
+#'@param pve The desired percentage of variance to be explained by the FPCs.
+#'  Only used if \code{J} is not supplied. Defaults to 0.95.
 #'@param family A string indicating the family of the response variable. Currently only "gaussian"
 #'  (linear regression) and "binomial" (logistic regression) are supported.
 #'@param seed An integer used to specify the seed. Optional, but useful for making results reproducible in the
@@ -144,7 +147,8 @@
 #'
 #'@export
 
-misfit <- function(dat,grid,nimps=10,J,family="gaussian",link = NULL,
+misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
+                   family="gaussian",link = NULL,
                    impute_type = "Multiple",cond.y = T,seed=NULL,
                    user_params = NULL,use_fcr = TRUE,k = -1, #nPhi = NULL,
                    fcr.args = list(use_bam = T,niter = 1),
@@ -179,6 +183,9 @@ misfit <- function(dat,grid,nimps=10,J,family="gaussian",link = NULL,
       run.time[["est"]] <- par.est[["runtime"]]
     }else{
       ipars <- user_params
+    }
+    if(is.null(J)){
+      J <- which.max(cumsum(ipars$lam)/sum(ipars$lam) > pve)[1] #determine number of PCs
     }
 
     # Impute Scores
@@ -290,6 +297,9 @@ misfit <- function(dat,grid,nimps=10,J,family="gaussian",link = NULL,
       run.time[["est"]] <- par.est[["runtime"]]
     }else{
       ipars = user_params
+    }
+    if(is.null(J)){
+      J <- which.max(cumsum(ipars$lam)/sum(ipars$lam) > pve)[1] #determine number of PCs
     }
 
     # Impute Scores
