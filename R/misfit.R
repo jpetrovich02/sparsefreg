@@ -19,8 +19,6 @@
 #'  Only accepts "Mean" or "Multiple". Defaults to "Multiple".
 #'@param cond.y A boolean indicating whehter to condition on the response variable when imputing.
 #'  Defaults to TRUE.
-#'@param ret_allxi logical-valued.. Indicates whether or not to return all \code{nimps}
-#'  imputed sets of scores. If FALSE (default), returns the average scores across the \code{nimps} imputations.
 #'@param user_params An optional list of user-defined imputation parameters. Currently, the user must provide
 #'  either all necessary imputation parameters, or none. See 'Details'.
 #'@param use_fcr A boolean indicating whether to use \code{\link[fcr]{fcr}} or \code{\link[fdapace]{FPCA}} when estimating the necessary imputation
@@ -146,9 +144,10 @@
 #'
 #'@export
 
-misfit <- function(dat,grid,nimps=10,J,family="gaussian",link = NULL,seed=NULL,
-                   impute_type = "Multiple",cond.y = T,ret_allxi = F,user_params = NULL,
-                   use_fcr = TRUE,fcr.args = list(use_bam = T,niter = 1),k = -1, #nPhi = NULL,
+misfit <- function(dat,grid,nimps=10,J,family="gaussian",link = NULL,
+                   impute_type = "Multiple",cond.y = T,seed=NULL,
+                   user_params = NULL,use_fcr = TRUE,k = -1, #nPhi = NULL,
+                   fcr.args = list(use_bam = T,niter = 1),
                    face.args=list(knots = 12, lower = -3, pve = 0.95)){
 
   # Check arguments
@@ -274,9 +273,6 @@ misfit <- function(dat,grid,nimps=10,J,family="gaussian",link = NULL,seed=NULL,
 
     }
 
-    # if(!ret_allxi){
-    #   xi_all <- apply(xi_all,c(1,2),mean)
-    # }
 
   }else if(family=="binomial"){
     if(is.null(link)){
@@ -486,12 +482,6 @@ misfit <- function(dat,grid,nimps=10,J,family="gaussian",link = NULL,seed=NULL,
 
     }
 
-    # if(!ret_allxi){
-    #   if(J==1){
-    #     xi_all <- apply(xi_all,1,mean)
-    #   }else
-    #     xi_all <- apply(xi_all,c(1,2),mean)
-    # }
   }
 
   out <- list(params = ipars, Xiest = Xiest, Xhat = Xhat,
