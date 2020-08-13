@@ -154,7 +154,7 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
                    fcr.args = list(use_bam = T,niter = 1),
                    face.args=list(knots = 12, lower = -3, pve = 0.95)){
 
-  # Check arguments
+  ## Check arguments
   if(!is.null(user_params)){
     # issue error if any necessary params are missing
 
@@ -168,14 +168,19 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
     stop(paste(family,"family not recognized. Must be one of: gaussian or binomial"))
   }
 
+  ## Set up outputs
+  Xitilde <- NULL
   run.time <- list(est = NULL,imp = NULL)
+
+  ## Data values
   M <- length(grid)
   N <- length(unique(dat$subj))
   y <- (dat %>% group_by(subj) %>% summarise(y = first(y)))$y
 
+  ## Begin imputation
   if(family=="gaussian"){
 
-    # Estimate imputation parameters
+    ## Estimate imputation parameters
     if(is.null(user_params)){
       par.est <- param_est_linear(dat,y,grid,M,cond.y,use_fcr,k = k,#nPhi = nPhi,
                                   fcr.args = fcr.args,face.args = face.args)
@@ -188,7 +193,7 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
       J <- which.max(cumsum(ipars$lam)/sum(ipars$lam) > pve)[1] #determine number of PCs
     }
 
-    # Impute Scores
+    ## Impute Scores
     imp.start <- proc.time()
     if(cond.y){
       scores_all <- cond_imp_lm(dat,workGrid = grid,nimps = nimps,seed = seed,impute_type = impute_type,
@@ -202,12 +207,12 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
     }
     run.time[["imp"]] <- proc.time() - imp.start
 
-    # Obtain regression estimates using imputed scores
+    ## Obtain regression estimates using imputed scores
     if(impute_type=="Multiple"){
       scores_imp <- scores_all[,1:J,]
       Xiest <- scores_imp
 
-      # Estimate X's from imputed scores
+      ## Estimate X's from imputed scores
       Xall <- array(NA,c(N,M,nimps))
       for(i in 1:nimps){
         # Xall[,,i] <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xitilde[,,i]))
@@ -220,7 +225,7 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
       }
       Xhat <- apply(Xall,c(1,2),mean)
 
-      # Estimate Beta
+      ## Estimate Beta
       b.hat.mat <- matrix(NA,nrow = J,ncol = nimps)
       beta.hat.mat <- matrix(NA,nrow = M,ncol = nimps)
       beta.var <- array(NA,dim = c(M,M,nimps))
@@ -255,14 +260,14 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
     }else if(impute_type=="Mean"){
       Xiest <- scores_all[,1:J]
 
-      # Estimate X's from imputed scores
+      ## Estimate X's from imputed scores
       Xhat <- if(J==1){
         sweep(matrix(rep(ipars[["phi"]][,1],N),N,M,byrow = T)*c(Xiest),2,ipars[["mux"]],FUN = "+")
       }else{
         t(c(ipars[["mux"]]) + ipars[["phi"]][,1:J]%*%t(Xiest))
       }
 
-      # Beta estimate
+      ## Beta estimate
       fit <- lm(y~Xiest)
       veps <- sum((fit$residuals)^2)/(N-length(fit$coefficients))
       ipars[["var_eps"]] <- veps
@@ -289,7 +294,7 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
     }
     muy <-  mean(y)
 
-    # Estimate imputation parameters
+    ## Estimate imputation parameters
     if(is.null(user_params)){
       par.est <- param_est_logistic(obsdf,grid,cond.y = cond.y,p = muy,fcr.args = fcr.args,
                                   k = k,face.args = face.args)#,nPhi = nPhi)
@@ -302,7 +307,7 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
       J <- which.max(cumsum(ipars$lam)/sum(ipars$lam) > pve)[1] #determine number of PCs
     }
 
-    # Impute Scores
+    ## Impute Scores
     imp.start <- proc.time()
     if(cond.y){
       scores_all <- cond_imp_logistic(dat,workGrid = grid,nimps = nimps,seed = seed,impute_type = impute_type,
@@ -315,13 +320,13 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
     }
     run.time[["imp"]] <- proc.time() - imp.start
 
-    # Obtain regression estimates using imputed scores
+    ## Obtain regression estimates using imputed scores
     if(impute_type=="Multiple"){
       scores_imp <- scores_all[,1:J,]
       Xiest <- scores_imp
 
       if(cond.y){
-        # Add back the means to scores_imp
+        ## Add back the means to scores_imp
         Xitilde <- scores_imp
         if(J==1){
           mean0j <- mean(ipars[["mu0"]]*ipars[["phi"]][,1])
@@ -335,36 +340,44 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
           Xitilde[which(y==1),,] <- aperm(apply(Xitilde[which(y==1),,],c(1,3),function(x) x + mean1j),c(2,1,3))
         }
 
-        # Estimate X's from imputed scores
+        ## Estimate X's from imputed scores
         Xall <- array(NA,c(N,M,nimps))
-        # if(J==1){
-        #   for(i in 1:nimps){
-        #     Xall[,,i] <- Xitilde[,i]%*%t(ipars[["phi"]][,1])
-        #     # for(j in 1:N){
-        #     #   mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
-        #     #   Xall[j,,i] <- Xall[j,,i] + mu_y
-        #     # }
-        #   }
-        # }else{
-        #   for(i in 1:nimps){
-        #     Xall[,,i] <- Xitilde[,,i]%*%t(ipars[["phi"]][,1:J])
-        #     # for(j in 1:N){
-        #     #   mu_y <- ifelse(y[j]==0,ipars[["mu0"]],ipars[["mu1"]])
-        #     #   Xall[j,,i] <- Xall[j,,i] + mu_y
-        #     # }
-        #   }
-        # }
-        for(i in 1:nimps){
-          # Xall[,,i] <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xitilde[,,i]))
-          if(J==1){
-            Xall[,,i] <- Xitilde[,i]%*%t(ipars[["phi"]][,1])
-          }else{
-            Xall[,,i] <- Xitilde[,,i]%*%t(ipars[["phi"]][,1:J])
+        if(J==1){
+          for(i in 1:nimps){
+            Xall[,,i] <- Xiest[,i]%*%t(ipars[["phi"]][,1])
+            for(j in 1:N){
+              if(y[j]==0){
+                mu_y <- ipars[["mu0"]]
+              }else if(y[j]==1){
+                mu_y <- ipars[["mu1"]]
+              }
+              Xall[j,,i] <- Xall[j,,i] + mu_y
+            }
+          }
+        }else{
+          for(i in 1:nimps){
+            Xall[,,i] <- Xiest[,,i]%*%t(ipars[["phi"]][,1:J])
+            for(j in 1:N){
+              if(y[j]==0){
+                mu_y <- ipars[["mu0"]]
+              }else if(y[j]==1){
+                mu_y <- ipars[["mu1"]]
+              }
+              Xall[j,,i] <- Xall[j,,i] + mu_y
+            }
           }
         }
+        # for(i in 1:nimps){
+        #   # Xall[,,i] <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xitilde[,,i]))
+        #   if(J==1){
+        #     Xall[,,i] <- Xitilde[,i]%*%t(ipars[["phi"]][,1])
+        #   }else{
+        #     Xall[,,i] <- Xitilde[,,i]%*%t(ipars[["phi"]][,1:J])
+        #   }
+        # }
         Xhat <- apply(Xall,c(1,2),mean)
 
-        # Estimate Beta
+        ## Estimate Beta
         bhat <- matrix(NA,J,nimps)
         beta.hat.mat <- matrix(NA,M,nimps)
         beta.var <- array(NA,dim = c(M,M,nimps))
@@ -386,7 +399,7 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
         }
 
       }else if(!cond.y){
-        # Estimate X's from imputed scores
+        ## Estimate X's from imputed scores
         Xall <- array(NA,c(N,M,nimps))
         for(i in 1:nimps){
           if(J==1){
@@ -399,7 +412,7 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
         }
         Xhat <- apply(Xall,c(1,2),FUN = mean)
 
-        # Estimate Beta
+        ## Estimate Beta
         bhat <- matrix(NA,nrow = J,ncol = nimps)
         beta.hat.mat <- matrix(NA,nrow = M,ncol = nimps)
         beta.var <- array(NA,dim = c(M,M,nimps))
@@ -434,7 +447,7 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
       Xiest <- scores_all[,1:J]
 
       if(cond.y){
-        # Add back means
+        ## Add back means
         Xitilde <- Xiest
         if(J==1){
           mean0j <- mean(ipars[["mu0"]]*ipars[["phi"]][,1])
@@ -448,15 +461,19 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
           Xitilde[which(y==1),] <- Xitilde[which(y==1),] + matrix(mean1j,sum(y==1),J,byrow = T)
         }
 
-        # Estimate X's from imputed scores
-        Xhat <- Xitilde%*%t(ipars[["phi"]][,1:J])
-        # Xhat <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xitilde))
-        # for(i in 1:N){
-        #   mu_y <- ifelse(y[i]==0,ipars[["mu0"]],ipars[["mu1"]])
-        #   Xhat[i,] <- Xhat[i,] + mu_y
-        # }
+        ## Estimate X's from imputed scores
+        # Xhat <- Xiest%*%t(ipars[["phi"]][,1:J])
+        Xhat <- Xiest%*%t(ipars[["phi"]][,1:J])
+        for(i in 1:N){
+          if(y[i]==0){
+            mu_y <- ipars[["mu0"]]
+          }else if(y[i]==1){
+            mu_y <- ipars[["mu1"]]
+          }
+          Xhat[i,] <- Xhat[i,] + mu_y
+        }
 
-        # Estimate Beta
+        ## Estimate Beta
         fit <- glm(y ~ Xitilde,family = glm.fam)
         bhat <- coef(fit)[-1]
         if(J==1){
@@ -472,10 +489,10 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
         Cbeta <- beta.var
 
       }else if(!cond.y){
-        # Estimate X's from imputed scores
+        ## Estimate X's from imputed scores
         Xhat <- t(ipars[["mux"]] + ipars[["phi"]][,1:J]%*%t(Xiest))
 
-        # Beta estimate
+        ## Beta estimate
         fit <- glm(y~Xiest,family = glm.fam)
         bhat <- coef(fit)[-1]
         if(J==1){
@@ -496,7 +513,7 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
 
   out <- list(params = ipars, Xiest = Xiest, Xhat = Xhat,
               beta.hat = beta.hat, #alpha.hat = alpha.hat,
-              Cbeta = Cbeta,J = J,pve = pve,
+              Cbeta = Cbeta,J = J,pve = pve, Xitilde = Xitilde,
               run.time = run.time)
   return(out)
 }
