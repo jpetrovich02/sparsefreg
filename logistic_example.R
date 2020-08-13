@@ -83,7 +83,7 @@ T_mat[spt,]<-rbind(grid[ind_obs[spt[1],]],grid[ind_obs[spt[1],]])
 obsdf <- data.frame("X" = c(t(X_mat)),"argvals" = c(t(T_mat)),
                     "y" = rep(y,each = m),"subj" = rep(1:N,each = m))
 
-## To use the true imputation parameters, uncomment below and input these in the user_params argument
+# # To use the true imputation parameters, uncomment below and input these in the user_params argument
 # unconditional_params <- list(Cx = Cx, mux = mux,var_delt = var_delt,
 #                              lam = lam, phi = phi)
 #
@@ -182,3 +182,15 @@ matplot(grid,t(mec$Xhat[which(y==1),]),type = 'l',col = 'red',add = T)
 matplot(grid,t(muc$Xhat[which(y==0),]),
         type = 'l',col = 'black',ylim = ylim,main = "Multiple Conditional")
 matplot(grid,t(muc$Xhat[which(y==1),]),type = 'l',col = 'red',add = T)
+
+
+
+## Individual Trajectories
+id <- sample(1:N,size = 1)
+plot(grid,X_s[id,],lwd = 3,type = 'l',ylim = c(-4,4))
+lines(grid,X_comp[id,],lty = 2)
+points(T_mat[id,],X_mat[id,],lwd = 2)
+lines(grid,muc$Xhat[id,],col = 'blue')
+lines(grid,mec$Xhat[id,],col = "green3")
+lines(grid,meu$Xhat[id,],col = 'red')
+lines(grid,muu$Xhat[id,],col = 'orange3')
