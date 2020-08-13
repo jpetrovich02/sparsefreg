@@ -8,17 +8,17 @@ misfit(
   dat,
   grid,
   nimps = 10,
-  J,
+  J = NULL,
+  pve = 0.95,
   family = "gaussian",
   link = NULL,
-  seed = NULL,
   impute_type = "Multiple",
   cond.y = T,
-  ret_allxi = F,
+  seed = NULL,
   user_params = NULL,
   use_fcr = TRUE,
-  fcr.args = list(use_bam = T, niter = 1),
   k = -1,
+  fcr.args = list(use_bam = T, niter = 1),
   face.args = list(knots = 12, lower = -3, pve = 0.95)
 )
 }
@@ -33,13 +33,14 @@ is FALSE, only 3 columns are needed (no 'y' variable is used).}
 
 \item{nimps}{An integer specifying the number of desired imputations, if \code{impute_type} is "Multiple".}
 
-\item{J}{An integer specifying the number of FPCs to include in the regression model.}
+\item{J}{An integer specifying the number of FPCs to include in the regression model. By default (NULL),
+J will be chosen as the minimum number of FPCs required to explain a given percentage of variance.}
+
+\item{pve}{The desired percentage of variance to be explained by the FPCs.
+Only used if \code{J} is not supplied. Defaults to 0.95.}
 
 \item{family}{A string indicating the family of the response variable. Currently only "gaussian"
 (linear regression) and "binomial" (logistic regression) are supported.}
-
-\item{seed}{An integer used to specify the seed. Optional, but useful for making results reproducible in the
-Multiple Imputation step.}
 
 \item{impute_type}{A string indicating whether to use mean or multiple imputation.
 Only accepts "Mean" or "Multiple". Defaults to "Multiple".}
@@ -47,8 +48,8 @@ Only accepts "Mean" or "Multiple". Defaults to "Multiple".}
 \item{cond.y}{A boolean indicating whehter to condition on the response variable when imputing.
 Defaults to TRUE.}
 
-\item{ret_allxi}{logical-valued.. Indicates whether or not to return all \code{nimps}
-imputed sets of scores. If FALSE (default), returns the average scores across the \code{nimps} imputations.}
+\item{seed}{An integer used to specify the seed. Optional, but useful for making results reproducible in the
+Multiple Imputation step.}
 
 \item{user_params}{An optional list of user-defined imputation parameters. Currently, the user must provide
 either all necessary imputation parameters, or none. See 'Details'.}
@@ -56,11 +57,11 @@ either all necessary imputation parameters, or none. See 'Details'.}
 \item{use_fcr}{A boolean indicating whether to use \code{\link[fcr]{fcr}} or \code{\link[fdapace]{FPCA}} when estimating the necessary imputation
 parameters. TRUE indicates fcr, FALSE indicates pace. Default is TRUE. See 'Details' for more discussion.}
 
+\item{k}{Dimension of the smooth terms used in \code{fcr}. Default is 15.}
+
 \item{fcr.args}{A list of arguments which can be passed to \code{fcr} (for the estimation of imputaion
 parameters). Default is to use \code{use_bam} = T and \code{niter} = 1. The list must not contain the
 formula, which is constructed within \code{misfit}. See \code{fcr} for more details.}
-
-\item{k}{Dimension of the smooth terms used in \code{fcr}. Default is 15.}
 
 \item{face.args}{A list of arguments to be passed to the underlying function \code{face.sparse}.
 Currently defaults to setting \code{knots} = 12 and \code{pve} = 0.95. See \code{face.sparse} for

@@ -496,7 +496,7 @@ misfit <- function(dat,grid,nimps=10,J = NULL,pve = 0.95,
 
   out <- list(params = ipars, Xiest = Xiest, Xhat = Xhat,
               beta.hat = beta.hat, #alpha.hat = alpha.hat,
-              Cbeta = Cbeta,J,pve,
+              Cbeta = Cbeta,J = J,pve = pve,
               run.time = run.time)
   return(out)
 }
